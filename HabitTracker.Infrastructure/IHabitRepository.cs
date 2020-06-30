@@ -8,6 +8,7 @@ namespace HabitTracker.Infrastructure {
         HabitModel GetUserHabit(Guid userID, Guid habitID);
         HabitModel AddHabit(Guid userID, String habitName, IEnumerable<String> daysOff);
         HabitModel UpdateHabit(Guid userID, Guid habitID, String habitName, IEnumerable<String> daysOff);
-        // Habit DeleteHabit();
+        HabitModel DeleteHabit(Guid userID, Guid habitID);
+        HabitModel InsertHabitLog(Guid userID, Guid habitID);
     }
 }

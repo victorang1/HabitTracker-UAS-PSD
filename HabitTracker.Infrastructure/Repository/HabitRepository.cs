@@ -56,7 +56,7 @@ namespace HabitTracker.Infrastructure.Repository
         }
         public HabitModel GetUserHabit(Guid userID, Guid habitID)
         {
-            HabitModel habit = new HabitModel();
+            HabitModel habit = null;
             string rawQuery = @"
             SELECT 
                 h.habit_id, 
@@ -94,7 +94,7 @@ namespace HabitTracker.Infrastructure.Repository
             using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
             {
                 try {
-                    String[] arrDaysOff = daysOff == null 
+                    String[] arrDaysOff = daysOff != null 
                         ? arrDaysOff = daysOff.Select(i => i).ToArray() : new String[]{};
                     HabitModel model = new HabitModel(habitName, arrDaysOff, userID);
                     cmd.Parameters.AddWithValue("habitId", model.HabitID);
@@ -104,6 +104,7 @@ namespace HabitTracker.Infrastructure.Repository
                     cmd.Parameters.AddWithValue("createdAt", model.CreatedAt);
                     cmd.ExecuteNonQuery();
                     _transaction.Commit();
+                    return model;
                 } catch(Exception e)
                 {
                     Console.WriteLine(e.ToString());
@@ -133,9 +134,47 @@ namespace HabitTracker.Infrastructure.Repository
             }
             return GetUserHabit(userID, habitID);
         }
-        // public Habit DeleteHabit() {
 
-        // }
+        public HabitModel DeleteHabit(Guid userID, Guid habitID) {
+            HabitModel deletedHabit = null;
+            string rawQuery = @"DELETE FROM habit WHERE user_id = @userId AND habit_id = @habitId";
+            using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
+            {
+                try {
+                    cmd.Parameters.AddWithValue("habitId", habitID);
+                    cmd.Parameters.AddWithValue("userId", userID);
+                    deletedHabit = GetUserHabit(userID, habitID);
+                    if(deletedHabit == null) return deletedHabit;
+                    cmd.ExecuteNonQuery();
+                    _transaction.Commit();
+                    return deletedHabit;
+                } catch(Exception e)
+                {
+                    Console.WriteLine(e.ToString());
+                }
+            }
+            return deletedHabit;
+        }
+
+        public HabitModel InsertHabitLog(Guid userID, Guid habitID)
+        {
+            string rawQuery = 
+                @"INSERT INTO habit_logs VALUES (@logsId, @habitId, @userId)";
+            using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
+            {
+                try {
+                    cmd.Parameters.AddWithValue("logsId", Guid.NewGuid());
+                    cmd.Parameters.AddWithValue("habitId", habitID);
+                    cmd.Parameters.AddWithValue("userId", userID);
+                    cmd.ExecuteNonQuery();
+                    _transaction.Commit();
+                } catch(Exception e)
+                {
+                    Console.WriteLine(e.ToString());
+                }
+            }
+            return GetUserHabit(userID, habitID);
+        }
 
         private HabitModel bindHabitData(NpgsqlDataReader reader)
         {

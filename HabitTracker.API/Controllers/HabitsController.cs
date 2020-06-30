@@ -27,23 +27,26 @@ namespace HabitTracker.Api.Controllers
       {
         List<Habit> habits = new List<Habit>();
         IEnumerable<HabitModel> userHabits = db.HabitRepository.GetAllUserHabit(userID);
-        foreach(HabitModel item in userHabits) {
-            Habit habit = new Habit();
-            habit.ID = item.HabitID;
-            habit.Name = item.HabitName;
-            habit.DaysOff = item.DaysOff;
-            habit.CurrentStreak = item.CurrentStreak;
-            habit.LongestStreak = item.LongestStreak;
-            habit.LogCount = item.LogCount;
-            habit.Logs = item.Logs;
-            habit.UserID = item.UserID;
-            habit.CreatedAt = item.CreatedAt;
-            habits.Add(habit);
+        if(userHabits != null && userHabits.Any()) 
+        {
+            foreach(HabitModel item in userHabits)
+            {
+              Habit habit = new Habit();
+              habit.ID = item.HabitID;
+              habit.Name = item.HabitName;
+              habit.DaysOff = item.DaysOff;
+              habit.CurrentStreak = item.CurrentStreak;
+              habit.LongestStreak = item.LongestStreak;
+              habit.LogCount = item.LogCount;
+              habit.Logs = item.Logs;
+              habit.UserID = item.UserID;
+              habit.CreatedAt = item.CreatedAt;
+              habits.Add(habit);
+            }
+            return habits;
         }
-        return habits;
       }
-
-      return NotFound("user not found");
+      return NotFound("No Habits Found for this User");
     }
 
     [HttpGet("api/v1/users/{userID}/habits/{id}")]
@@ -52,17 +55,20 @@ namespace HabitTracker.Api.Controllers
       using(var db = new PostgresUnitOfWork())
       {
         HabitModel habitModel = db.HabitRepository.GetUserHabit(userID, id);
-        Habit habit = new Habit();
-        habit.ID = habitModel.HabitID;
-        habit.Name = habitModel.HabitName;
-        habit.DaysOff = habitModel.DaysOff;
-        habit.CurrentStreak = habitModel.CurrentStreak;
-        habit.LongestStreak = habitModel.LongestStreak;
-        habit.LogCount = habitModel.LogCount;
-        habit.Logs = habitModel.Logs;
-        habit.UserID = habitModel.UserID;
-        habit.CreatedAt = habitModel.CreatedAt;
-        return habit;
+        if(habitModel != null)
+        {
+          Habit habit = new Habit();
+          habit.ID = habitModel.HabitID;
+          habit.Name = habitModel.HabitName;
+          habit.DaysOff = habitModel.DaysOff;
+          habit.CurrentStreak = habitModel.CurrentStreak;
+          habit.LongestStreak = habitModel.LongestStreak;
+          habit.LogCount = habitModel.LogCount;
+          habit.Logs = habitModel.Logs;
+          habit.UserID = habitModel.UserID;
+          habit.CreatedAt = habitModel.CreatedAt;
+        }
+        return NotFound("Habit Id with this userId Not found");
       }
     }
 
@@ -96,6 +102,10 @@ namespace HabitTracker.Api.Controllers
           habit.ID = habitModel.HabitID;
           habit.Name = habitModel.HabitName;
           habit.DaysOff = habitModel.DaysOff;
+          habit.CurrentStreak = habitModel.CurrentStreak;
+          habit.LongestStreak = habitModel.LongestStreak;
+          habit.LogCount = habitModel.LogCount;
+          habit.Logs = habitModel.Logs;
           habit.UserID = habitModel.UserID;
           habit.CreatedAt = habitModel.CreatedAt;
           return habit;
@@ -107,58 +117,47 @@ namespace HabitTracker.Api.Controllers
     [HttpDelete("api/v1/users/{userID}/habits/{id}")]
     public ActionResult<Habit> DeleteHabit(Guid userID, Guid id)
     {
-      //mock only. replace with your solution
-      return new Habit
+      using(var db = new PostgresUnitOfWork())
       {
-        UserID = userID,
-        ID = id,
-      };
+        HabitModel habitModel = db.HabitRepository.DeleteHabit(userID, id);
+        if(habitModel != null) {
+          Habit habit = new Habit();
+          habit.ID = habitModel.HabitID;
+          habit.Name = habitModel.HabitName;
+          habit.DaysOff = habitModel.DaysOff;
+          habit.CurrentStreak = habitModel.CurrentStreak;
+          habit.LongestStreak = habitModel.LongestStreak;
+          habit.LogCount = habitModel.LogCount;
+          habit.Logs = habitModel.Logs;
+          habit.UserID = habitModel.UserID;
+          habit.CreatedAt = habitModel.CreatedAt;
+          return habit;
+        }
+        return NotFound("habit id not found");
+      }
     }
 
     [HttpPost("api/v1/users/{userID}/habits/{id}/logs")]
     public ActionResult<Habit> Log(Guid userID, Guid id)
     {
-      //mock only. replace with your solution
-      return new Habit
+      using(var db = new PostgresUnitOfWork())
       {
-        UserID = userID,
-        ID = id,
-        Logs = new[] { DateTime.Now },
-        CurrentStreak = 1,
-        LongestStreak = 1
-      };
+        HabitModel habitModel = db.HabitRepository.InsertHabitLog(userID, id);
+        if(habitModel != null) {
+          Habit habit = new Habit();
+          habit.ID = habitModel.HabitID;
+          habit.Name = habitModel.HabitName;
+          habit.DaysOff = habitModel.DaysOff;
+          habit.CurrentStreak = habitModel.CurrentStreak;
+          habit.LongestStreak = habitModel.LongestStreak;
+          habit.LogCount = habitModel.LogCount;
+          habit.Logs = habitModel.Logs;
+          habit.UserID = habitModel.UserID;
+          habit.CreatedAt = habitModel.CreatedAt;
+          return habit;
+        }
+        return NotFound("Failed to insert to this habit");
+      }
     }
-    
-    //mock data only. remove later
-    private static readonly Guid AmirID = Guid.Parse("4fbb54f1-f340-441e-9e57-892329464d56");
-    private static readonly Guid BudiID = Guid.Parse("0b54c1fe-a374-4df8-ba9a-0aa7744a4531");
-
-    //mock data only. remove later
-    private static readonly Habit habitAmir1 = new Habit
-    {
-      ID = Guid.Parse("fd725b05-a221-461a-973c-4a0899cee14d"),
-      Name = "baca buku",
-      UserID = AmirID
-    };
-
-    //mock data only. remove later
-    private static readonly Habit habitAmir2 = new Habit
-    {
-      ID = Guid.Parse("01169031-752e-4c52-822c-a04d290438ea"),
-      Name = "code one simple app prototype",
-      DaysOff = new[] { "Sat", "Sun" },
-      UserID = AmirID
-    };
-
-    //mock data only. remove later
-    private static readonly Habit habitBudi1 = new Habit
-    {
-      ID = Guid.Parse("05fb5a61-aa1f-4a96-b952-378bf73ca713"),
-      Name = "100 push-ups, 100 sit-ups, 100 squats",
-      LongestStreak = 100,
-      CurrentStreak = 10,
-      LogCount = 123,
-      UserID = BudiID
-    };
   }
 }
