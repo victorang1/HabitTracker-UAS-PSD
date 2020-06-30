@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HabitTracker.Infrastructure.Model;
+using HabitTracker.Infrastructure.Util;
 using System.Linq;
 
 using Npgsql;
@@ -85,9 +86,24 @@ namespace HabitTracker.Infrastructure.Repository
             }
             return habit;
         }
-        // public Habit AddHabit(String habitName, IEnumerable<String> daysOff) {
-
-        // }
+        public Habit AddHabit(String habitName, IEnumerable<String> daysOff) {
+            string rawQuery = @"
+                INSERT INTO habit VALUES (
+                    @habitId,
+                    @habitName,
+                    @daysOff,
+                    @createdDate
+                )
+            ";
+            using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
+            {
+                cmd.Parameters.AddWithValue("habitId", Guid.NewGuid());
+                cmd.Parameters.AddWithValue("habitName", habitName);
+                cmd.Parameters.AddWithValue("daysOff", daysOff);
+                cmd.Parameters.AddWithValue("createdDate", DateUtil.GetServerDateTimeFormat());
+                cmd.ExecuteNonQuery();
+            }
+        }
         // public Habit UpdateHabit(String habitName, IEnumerable<String> daysOff) {
 
         // }
@@ -119,7 +135,7 @@ namespace HabitTracker.Infrastructure.Repository
             using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
             {
                 cmd.Parameters.AddWithValue("habitId", habitID);
-                cmd.Parameters.AddWithValue("currDate", DateTime.Now.ToString("yyyy-MM-dd"));
+                cmd.Parameters.AddWithValue("currDate", DateUtil.GetServerDateTimeFormat());
                 using (NpgsqlDataReader reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
