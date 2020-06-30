@@ -6,8 +6,8 @@ namespace HabitTracker.Infrastructure {
     public interface IHabitRepository {
         IEnumerable<HabitModel> GetAllUserHabit(Guid userID);
         HabitModel GetUserHabit(Guid userID, Guid habitID);
-        Habit AddHabit(String habitName, IEnumerable<String> daysOff);
-        // Habit UpdateHabit(String habitName, IEnumerable<String> daysOff);
+        HabitModel AddHabit(Guid userID, String habitName, IEnumerable<String> daysOff);
+        HabitModel UpdateHabit(Guid userID, Guid habitID, String habitName, IEnumerable<String> daysOff);
         // Habit DeleteHabit();
     }
 }

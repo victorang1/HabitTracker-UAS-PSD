@@ -26,8 +26,8 @@ namespace HabitTracker.Api.Controllers
       using(var db = new PostgresUnitOfWork())
       {
         List<Habit> habits = new List<Habit>();
-        IEnumerable<HabitModel> userHabit = db.HabitRepository.GetAllUserHabit(userID);
-        foreach(HabitModel item in userHabit) {
+        IEnumerable<HabitModel> userHabits = db.HabitRepository.GetAllUserHabit(userID);
+        foreach(HabitModel item in userHabits) {
             Habit habit = new Habit();
             habit.ID = item.HabitID;
             habit.Name = item.HabitName;
@@ -37,6 +37,7 @@ namespace HabitTracker.Api.Controllers
             habit.LogCount = item.LogCount;
             habit.Logs = item.Logs;
             habit.UserID = item.UserID;
+            habit.CreatedAt = item.CreatedAt;
             habits.Add(habit);
         }
         return habits;
@@ -50,16 +51,17 @@ namespace HabitTracker.Api.Controllers
     {
       using(var db = new PostgresUnitOfWork())
       {
-        HabitModel userHabit = db.HabitRepository.GetUserHabit(userID, id);
+        HabitModel habitModel = db.HabitRepository.GetUserHabit(userID, id);
         Habit habit = new Habit();
-        habit.ID = userHabit.HabitID;
-        habit.Name = userHabit.HabitName;
-        habit.DaysOff = userHabit.DaysOff;
-        habit.CurrentStreak = userHabit.CurrentStreak;
-        habit.LongestStreak = userHabit.LongestStreak;
-        habit.LogCount = userHabit.LogCount;
-        habit.Logs = userHabit.Logs;
-        habit.UserID = userHabit.UserID;
+        habit.ID = habitModel.HabitID;
+        habit.Name = habitModel.HabitName;
+        habit.DaysOff = habitModel.DaysOff;
+        habit.CurrentStreak = habitModel.CurrentStreak;
+        habit.LongestStreak = habitModel.LongestStreak;
+        habit.LogCount = habitModel.LogCount;
+        habit.Logs = habitModel.Logs;
+        habit.UserID = habitModel.UserID;
+        habit.CreatedAt = habitModel.CreatedAt;
         return habit;
       }
     }
@@ -67,28 +69,39 @@ namespace HabitTracker.Api.Controllers
     [HttpPost("api/v1/users/{userID}/habits")]
     public ActionResult<Habit> AddNewHabit(Guid userID, [FromBody] RequestData data)
     {
-      //mock only. replace with your solution
-      return new Habit
+      using(var db = new PostgresUnitOfWork())
       {
-        Name = data.Name,
-        DaysOff = data.DaysOff,
-        UserID = userID,
-        ID = Guid.NewGuid(),
-        CreatedAt = DateTime.Now,
-      };
+        HabitModel habitModel = db.HabitRepository.AddHabit(userID, data.Name, data.DaysOff);
+        if(habitModel != null) {
+          Habit habit = new Habit();
+          habit.ID = habitModel.HabitID;
+          habit.Name = habitModel.HabitName;
+          habit.DaysOff = habitModel.DaysOff;
+          habit.UserID = habitModel.UserID;
+          habit.CreatedAt = habitModel.CreatedAt;
+          return habit;
+        }
+        return NotFound("Add habit fail");
+      }
     }
 
     [HttpPut("api/v1/users/{userID}/habits/{id}")]
     public ActionResult<Habit> UpdateHabit(Guid userID, Guid id, [FromBody] RequestData data)
     {
-      //mock only. replace with your solution
-      return new Habit
+      using(var db = new PostgresUnitOfWork())
       {
-        Name = data.Name,
-        DaysOff = data.DaysOff,
-        UserID = userID,
-        ID = id,
-      };
+        HabitModel habitModel = db.HabitRepository.UpdateHabit(userID, id, data.Name, data.DaysOff);
+        if(habitModel != null) {
+          Habit habit = new Habit();
+          habit.ID = habitModel.HabitID;
+          habit.Name = habitModel.HabitName;
+          habit.DaysOff = habitModel.DaysOff;
+          habit.UserID = habitModel.UserID;
+          habit.CreatedAt = habitModel.CreatedAt;
+          return habit;
+        }
+        return NotFound("Update habit fail");
+      }
     }
 
     [HttpDelete("api/v1/users/{userID}/habits/{id}")]

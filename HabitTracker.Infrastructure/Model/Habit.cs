@@ -1,10 +1,23 @@
 using System;
 using System.Collections.Generic;
+using HabitTracker.Infrastructure.Util;
 
 namespace HabitTracker.Infrastructure.Model
 {
     public class HabitModel
     {
+        public HabitModel()
+        {
+
+        }
+        public HabitModel(String habitName, String[] daysOff, Guid userID)
+        {
+            this.HabitID = Guid.NewGuid();
+            this.HabitName = habitName;
+            this.DaysOff = daysOff;
+            this.UserID = userID;
+            this.CreatedAt = DateTime.Parse(DateUtil.GetServerDateTimeFormat());
+        }
         public Guid HabitID { get; set; }
         public String HabitName { get; set; }
         public String[] DaysOff { get; set; }

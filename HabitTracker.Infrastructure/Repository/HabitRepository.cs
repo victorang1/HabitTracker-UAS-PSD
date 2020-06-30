@@ -30,7 +30,8 @@ namespace HabitTracker.Infrastructure.Repository
                 days_off,
                 coalesce(COUNT(logs_id), 0) as log_count, 
                 string_agg(coalesce(logs_created::varchar, ''), ',') as logs, 
-                h.user_id
+                h.user_id,
+                created_at
             FROM habit h
             LEFT JOIN habit_logs hl ON h.habit_id = hl.habit_id
             WHERE h.user_id = @userId
@@ -63,7 +64,8 @@ namespace HabitTracker.Infrastructure.Repository
                 days_off,
                 coalesce(COUNT(logs_id), 0) as log_count, 
                 string_agg(coalesce(logs_created::varchar, ''), ',') as logs, 
-                h.user_id
+                h.user_id,
+                created_at
             FROM habit h
             LEFT JOIN habit_logs hl ON h.habit_id = hl.habit_id
             WHERE h.user_id = @userId AND h.habit_id = @habitId
@@ -86,27 +88,51 @@ namespace HabitTracker.Infrastructure.Repository
             }
             return habit;
         }
-        public Habit AddHabit(String habitName, IEnumerable<String> daysOff) {
-            string rawQuery = @"
-                INSERT INTO habit VALUES (
-                    @habitId,
-                    @habitName,
-                    @daysOff,
-                    @createdDate
-                )
-            ";
+        public HabitModel AddHabit(Guid userID, String habitName, IEnumerable<String> daysOff) {
+            string rawQuery = 
+                @"INSERT INTO habit VALUES (@habitId, @habitName, @daysOff, @userId, @createdAt)";
             using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
             {
-                cmd.Parameters.AddWithValue("habitId", Guid.NewGuid());
-                cmd.Parameters.AddWithValue("habitName", habitName);
-                cmd.Parameters.AddWithValue("daysOff", daysOff);
-                cmd.Parameters.AddWithValue("createdDate", DateUtil.GetServerDateTimeFormat());
-                cmd.ExecuteNonQuery();
+                try {
+                    String[] arrDaysOff = daysOff == null 
+                        ? arrDaysOff = daysOff.Select(i => i).ToArray() : new String[]{};
+                    HabitModel model = new HabitModel(habitName, arrDaysOff, userID);
+                    cmd.Parameters.AddWithValue("habitId", model.HabitID);
+                    cmd.Parameters.AddWithValue("habitName", model.HabitName);
+                    cmd.Parameters.AddWithValue("daysOff", model.DaysOff);
+                    cmd.Parameters.AddWithValue("userId", model.UserID);
+                    cmd.Parameters.AddWithValue("createdAt", model.CreatedAt);
+                    cmd.ExecuteNonQuery();
+                    _transaction.Commit();
+                } catch(Exception e)
+                {
+                    Console.WriteLine(e.ToString());
+                }
             }
+            return null;
         }
-        // public Habit UpdateHabit(String habitName, IEnumerable<String> daysOff) {
-
-        // }
+        public HabitModel UpdateHabit(Guid userID, Guid habitID, String habitName, IEnumerable<String> daysOff) {
+            string rawQuery = 
+                @"UPDATE habit SET habit_name = @habitName, days_off = @daysOff
+                    WHERE habit_id = @habitId AND user_id = @userId";
+            using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
+            {
+                try {
+                    String[] arrDaysOff = daysOff != null 
+                        ? arrDaysOff = daysOff.Select(i => i).ToArray() : new String[]{};
+                    cmd.Parameters.AddWithValue("habitId", habitID);
+                    cmd.Parameters.AddWithValue("habitName", habitName);
+                    cmd.Parameters.AddWithValue("daysOff", arrDaysOff);
+                    cmd.Parameters.AddWithValue("userId", userID);
+                    cmd.ExecuteNonQuery();
+                    _transaction.Commit();
+                } catch(Exception e)
+                {
+                    Console.WriteLine(e.ToString());
+                }
+            }
+            return GetUserHabit(userID, habitID);
+        }
         // public Habit DeleteHabit() {
 
         // }
@@ -120,6 +146,7 @@ namespace HabitTracker.Infrastructure.Repository
             habit.LogCount = reader.GetInt16(3);
             habit.Logs = getLogs(reader.GetString(4));
             habit.UserID = reader.GetGuid(5);
+            habit.CreatedAt = (DateTime) reader.GetValue(6);
             return habit;
         }
 
