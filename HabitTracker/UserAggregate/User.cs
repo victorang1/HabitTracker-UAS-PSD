@@ -15,5 +15,15 @@ namespace HabitTracker.UserAggregate
             if(user == null) return false;
             return this.UserID == user.UserID;
         }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 23 + UserID.GetHashCode();
+                return hash;
+            }
+        }
     }
 }

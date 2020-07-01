@@ -7,7 +7,7 @@ namespace HabitTracker
         void Handle(T e);
     }
 
-    public interface IObservable
+    public interface IObservable<T>
     {
         void Attach(IObserver<T> obs);
         void Broadcast(T e);
