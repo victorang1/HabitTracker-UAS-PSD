@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
-using HabitTracker.Infrastructure.Repository;
-using HabitTracker.Infrastructure.Model;
+using HabitTracker.API.AntiCorruption;
+using HabitTracker.API.Services;
 
 namespace HabitTracker.Api.Controllers
 {
@@ -23,25 +23,13 @@ namespace HabitTracker.Api.Controllers
     [HttpGet("api/v1/users/{userID}/badges")]
     public ActionResult<IEnumerable<Badge>> All(Guid userID)
     {
-      using(var db = new PostgresUnitOfWork())
+      BadgeACL ds = new BadgeACL(new BadgeService());
+      List<Badge> badges = ds.GetUserBadge(userID);
+      if(badges != null && badges.Any())
       {
-        IEnumerable<BadgeModel> items = db.BadgeRepository.GetUserBadge(userID);
-        List<Badge> badges = new List<Badge>();
-        if(items != null && items.Any()) {
-          foreach(BadgeModel item in items)
-          {
-            Badge badge = new Badge();
-            badge.ID = item.BadgeID;
-            badge.Name = item.Name;
-            badge.Description = item.Description;
-            badge.UserID = item.UserID;
-            badge.CreatedAt = item.CreatedAt;
-            badges.Add(badge);
-          }
-          return badges;
-        }
-        return NotFound("This user does not have any badge");
+        return badges;
       }
+      return NotFound("This user does not have any badge");
     }
   }
 }

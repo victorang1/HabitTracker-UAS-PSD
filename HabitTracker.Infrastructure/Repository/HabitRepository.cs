@@ -96,15 +96,15 @@ namespace HabitTracker.Infrastructure.Repository
                 try {
                     String[] arrDaysOff = daysOff != null 
                         ? arrDaysOff = daysOff.Select(i => i).ToArray() : new String[]{};
-                    HabitModel model = new HabitModel(habitName, arrDaysOff, userID);
-                    cmd.Parameters.AddWithValue("habitId", model.HabitID);
-                    cmd.Parameters.AddWithValue("habitName", model.HabitName);
-                    cmd.Parameters.AddWithValue("daysOff", model.DaysOff);
-                    cmd.Parameters.AddWithValue("userId", model.UserID);
-                    cmd.Parameters.AddWithValue("createdAt", model.CreatedAt);
+                    Guid habitID = Guid.NewGuid();
+                    cmd.Parameters.AddWithValue("habitId", habitID);
+                    cmd.Parameters.AddWithValue("habitName", habitName);
+                    cmd.Parameters.AddWithValue("daysOff", arrDaysOff);
+                    cmd.Parameters.AddWithValue("userId", userID);
+                    cmd.Parameters.AddWithValue("createdAt", DateTime.Parse(DateUtil.GetServerDateTimeFormat()));
                     cmd.ExecuteNonQuery();
                     _transaction.Commit();
-                    return model;
+                    return GetUserHabit(userID, habitID);
                 } catch(Exception e)
                 {
                     Console.WriteLine(e.ToString());
