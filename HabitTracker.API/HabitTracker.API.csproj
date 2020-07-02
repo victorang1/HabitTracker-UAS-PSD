@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HabitTracker.Infrastructure\HabitTracker.Infrastructure.csproj" />
+    <ProjectReference Include="..\HabitTracker.Domain\HabitTracker.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

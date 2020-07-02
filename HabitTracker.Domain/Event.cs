@@ -1,6 +1,6 @@
 using System;
 
-namespace HabitTracker
+namespace HabitTracker.Domain
 {
     public class LogCreated
     {

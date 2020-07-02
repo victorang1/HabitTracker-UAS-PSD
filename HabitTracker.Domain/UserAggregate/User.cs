@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace HabitTracker.UserAggregate
+namespace HabitTracker.Domain.UserAggregate
 {
     public class User
     {

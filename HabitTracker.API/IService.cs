@@ -9,8 +9,8 @@ namespace HabitTracker.API
     {  
         IEnumerable<HabitModel> GetAllUserHabits(Guid userID);
         HabitModel GetHabitByID(Guid userID, Guid habitID);
-        HabitModel AddHabit(Guid userID, String name, IEnumerable<String> daysOff);
-        HabitModel UpdateHabit(Guid userID, Guid habitID, String name, IEnumerable<String> daysOff);
+        HabitModel AddHabit(Guid userID, String name, String[] daysOff);
+        HabitModel UpdateHabit(Guid userID, Guid habitID, String name, String[] daysOff);
         HabitModel DeleteHabit(Guid userID, Guid habitID);
         HabitModel InsertLog(Guid userID, Guid habitID);
     }

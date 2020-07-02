@@ -40,7 +40,7 @@ namespace HabitTracker.API.AntiCorruption
             return null;
         }
 
-        public Habit AddHabit(Guid userID, String name, IEnumerable<String> daysOff)
+        public Habit AddHabit(Guid userID, String name, String[] daysOff)
         {
             HabitModel item = _habitService.AddHabit(userID, name, daysOff);
             if(item != null)
@@ -50,7 +50,7 @@ namespace HabitTracker.API.AntiCorruption
             return null;
         }
 
-        public Habit UpdateHabit(Guid userID, Guid habitID, String name, IEnumerable<String> daysOff)
+        public Habit UpdateHabit(Guid userID, Guid habitID, String name, String[] daysOff)
         {
             HabitModel item = _habitService.UpdateHabit(userID, habitID, name, daysOff);
             if(item != null)
@@ -72,7 +72,7 @@ namespace HabitTracker.API.AntiCorruption
 
         public Habit InsertLog(Guid userID, Guid habitID)
         {
-            HabitModel item = _habitService.DeleteHabit(userID, habitID);
+            HabitModel item = _habitService.InsertLog(userID, habitID);
             if(item != null)
             {
                 return bindHabitObject(item);

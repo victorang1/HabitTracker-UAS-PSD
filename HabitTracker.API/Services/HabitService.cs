@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using HabitTracker.Infrastructure.Repository;
 using HabitTracker.Infrastructure.Model;
 
+using Domain = HabitTracker.Domain.HabitAggregate;
+
 namespace HabitTracker.API.Services
 {
     public class HabitService : IHabitService
@@ -12,7 +14,7 @@ namespace HabitTracker.API.Services
         {
             using(var db = new PostgresUnitOfWork())
             {
-                return db.HabitRepository.GetAllUserHabit(userID);
+                return db.HabitRepository.GetAllHabit(userID);
             }
         }
 
@@ -20,21 +22,23 @@ namespace HabitTracker.API.Services
         {
             using(var db = new PostgresUnitOfWork())
             {
-                return db.HabitRepository.GetUserHabit(userID, habitID);
+                return db.HabitRepository.GetHabit(userID, habitID);
             }
         }
-        public HabitModel AddHabit(Guid userID, String name, IEnumerable<String> daysOff)
+        public HabitModel AddHabit(Guid userID, String name, String[] daysOff)
         {
             using(var db = new PostgresUnitOfWork())
             {
-                return db.HabitRepository.AddHabit(userID, name, daysOff);
+                Domain.HabitAggregate.Habit domainModel = Domain.HabitAggregate.Habit.NewHabit(userID, name, daysOff);
+                return db.HabitRepository.AddHabit(domainModel.UserID, domainModel.Name.HabitName, domainModel.DaysOff.daysOff);
             }
         }
-        public HabitModel UpdateHabit(Guid userID, Guid habitID, String name, IEnumerable<String> daysOff)
+        public HabitModel UpdateHabit(Guid userID, Guid habitID, String name, String[] daysOff)
         {
             using(var db = new PostgresUnitOfWork())
             {
-                return db.HabitRepository.UpdateHabit(userID, habitID, name, daysOff);
+                Domain.HabitAggregate.Habit domainModel = Domain.HabitAggregate.Habit.NewHabit(userID, habitID, name, daysOff);
+                return db.HabitRepository.UpdateHabit(domainModel.UserID, domainModel.HabitID, domainModel.Name.HabitName, domainModel.DaysOff.daysOff);
             }
         }
 

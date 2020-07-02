@@ -4,7 +4,7 @@ using HabitTracker.Infrastructure.Model;
 
 namespace HabitTracker.Infrastructure
 {
-    public interface IBadgeRepository
+    public interface IUserRepository
     {
         IEnumerable<BadgeModel> GetUserBadge(Guid userID);
     }

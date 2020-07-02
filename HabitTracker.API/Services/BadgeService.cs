@@ -12,7 +12,7 @@ namespace HabitTracker.API.Services
         {
             using(var db = new PostgresUnitOfWork())
             {
-                return db.BadgeRepository.GetUserBadge(userID);
+                return db.UserRepository.GetUserBadge(userID);
             }
         }
     }

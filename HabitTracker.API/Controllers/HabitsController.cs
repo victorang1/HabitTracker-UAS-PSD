@@ -47,25 +47,39 @@ namespace HabitTracker.Api.Controllers
     [HttpPost("api/v1/users/{userID}/habits")]
     public ActionResult<Habit> AddNewHabit(Guid userID, [FromBody] RequestData data)
     {
-      HabitACL ds = new HabitACL(new HabitService());
-      Habit habit = ds.AddHabit(userID, data.Name, data.DaysOff);
-      if(habit != null)
+      try
       {
-        return habit;
+        HabitACL ds = new HabitACL(new HabitService());
+        Habit habit = ds.AddHabit(userID, data.Name, data.DaysOff);
+        if(habit != null)
+        {
+          return habit;
+        }
+        return NotFound("Add habit fail");
       }
-      return NotFound("Add habit fail");
+      catch(Exception e)
+      {
+        return NotFound(e.Message);
+      }
     }
 
     [HttpPut("api/v1/users/{userID}/habits/{id}")]
     public ActionResult<Habit> UpdateHabit(Guid userID, Guid id, [FromBody] RequestData data)
     {
-      HabitACL ds = new HabitACL(new HabitService());
-      Habit habit = ds.UpdateHabit(userID, id, data.Name, data.DaysOff);
-      if(habit != null)
+      try
       {
-        return habit;
+        HabitACL ds = new HabitACL(new HabitService());
+        Habit habit = ds.UpdateHabit(userID, id, data.Name, data.DaysOff);
+        if(habit != null)
+        {
+          return habit;
+        }
+        return NotFound("Update habit fail");
       }
-      return NotFound("Update habit fail");
+      catch (Exception e)
+      {
+        return NotFound(e.Message);
+      }
     }
 
     [HttpDelete("api/v1/users/{userID}/habits/{id}")]

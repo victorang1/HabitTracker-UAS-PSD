@@ -11,7 +11,7 @@ namespace HabitTracker.Infrastructure.Repository
         private NpgsqlTransaction _transaction;
 
         private IHabitRepository _habitRepository;
-        private IBadgeRepository _badgeRepository;
+        private IUserRepository _userRepository;
 
         public PostgresUnitOfWork()
         {
@@ -30,13 +30,13 @@ namespace HabitTracker.Infrastructure.Repository
             }
         }
 
-        public IBadgeRepository BadgeRepository
+        public IUserRepository UserRepository
         {
             get {
-                if(_badgeRepository == null) {
-                    _badgeRepository = new BadgeRepository(_connection, _transaction);
+                if(_userRepository == null) {
+                    _userRepository = new UserRepository(_connection, _transaction);
                 }
-                return _badgeRepository;
+                return _userRepository;
             }
         }
 

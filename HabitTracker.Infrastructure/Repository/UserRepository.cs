@@ -8,12 +8,12 @@ using NpgsqlTypes;
 
 namespace HabitTracker.Infrastructure.Repository
 {
-    public class BadgeRepository : IBadgeRepository
+    public class UserRepository : IUserRepository
     {
         private NpgsqlConnection _connection;
         private NpgsqlTransaction _transaction;
 
-        public BadgeRepository(NpgsqlConnection connection, NpgsqlTransaction transaction)
+        public UserRepository(NpgsqlConnection connection, NpgsqlTransaction transaction)
         {
             _connection = connection;
             _transaction = transaction;

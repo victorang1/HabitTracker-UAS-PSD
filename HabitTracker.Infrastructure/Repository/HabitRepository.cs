@@ -20,7 +20,7 @@ namespace HabitTracker.Infrastructure.Repository
             _transaction = transaction;
         }
 
-        public IEnumerable<HabitModel> GetAllUserHabit(Guid userID)
+        public IEnumerable<HabitModel> GetAllHabit(Guid userID)
         {
             List<HabitModel> listHabit = new List<HabitModel>();
             string rawQuery = @"
@@ -49,12 +49,12 @@ namespace HabitTracker.Infrastructure.Repository
             }
             foreach(HabitModel model in listHabit)
             {
-                model.CurrentStreak = getCurrentStreak(model.HabitID);
+                model.CurrentStreak = GetCurrentStreak(model.HabitID);
                 model.LongestStreak = getLongestStreak(model.HabitID);
             }
             return listHabit;
         }
-        public HabitModel GetUserHabit(Guid userID, Guid habitID)
+        public HabitModel GetHabit(Guid userID, Guid habitID)
         {
             HabitModel habit = null;
             string rawQuery = @"
@@ -83,28 +83,28 @@ namespace HabitTracker.Infrastructure.Repository
                 }
             }
             if(habit != null) {
-                habit.CurrentStreak = getCurrentStreak(habit.HabitID);
+                habit.CurrentStreak = GetCurrentStreak(habit.HabitID);
                 habit.LongestStreak = getLongestStreak(habit.HabitID);
             }
             return habit;
         }
-        public HabitModel AddHabit(Guid userID, String habitName, IEnumerable<String> daysOff) {
+        public HabitModel AddHabit(Guid userID, String habitName, String[] daysOff) {
             string rawQuery = 
                 @"INSERT INTO habit VALUES (@habitId, @habitName, @daysOff, @userId, @createdAt)";
             using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
             {
                 try {
-                    String[] arrDaysOff = daysOff != null 
-                        ? arrDaysOff = daysOff.Select(i => i).ToArray() : new String[]{};
+                    // String[] arrDaysOff = daysOff != null 
+                    //     ? arrDaysOff = daysOff.Select(i => i).ToArray() : new String[]{};
                     Guid habitID = Guid.NewGuid();
                     cmd.Parameters.AddWithValue("habitId", habitID);
                     cmd.Parameters.AddWithValue("habitName", habitName);
-                    cmd.Parameters.AddWithValue("daysOff", arrDaysOff);
+                    cmd.Parameters.AddWithValue("daysOff", daysOff);
                     cmd.Parameters.AddWithValue("userId", userID);
                     cmd.Parameters.AddWithValue("createdAt", DateTime.Parse(DateUtil.GetServerDateTimeFormat()));
                     cmd.ExecuteNonQuery();
                     _transaction.Commit();
-                    return GetUserHabit(userID, habitID);
+                    return GetHabit(userID, habitID);
                 } catch(Exception e)
                 {
                     Console.WriteLine(e.ToString());
@@ -112,18 +112,18 @@ namespace HabitTracker.Infrastructure.Repository
             }
             return null;
         }
-        public HabitModel UpdateHabit(Guid userID, Guid habitID, String habitName, IEnumerable<String> daysOff) {
+        public HabitModel UpdateHabit(Guid userID, Guid habitID, String habitName, String[] daysOff) {
             string rawQuery = 
                 @"UPDATE habit SET habit_name = @habitName, days_off = @daysOff
                     WHERE habit_id = @habitId AND user_id = @userId";
             using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
             {
                 try {
-                    String[] arrDaysOff = daysOff != null 
-                        ? arrDaysOff = daysOff.Select(i => i).ToArray() : new String[]{};
+                    // String[] arrDaysOff = daysOff != null 
+                    //     ? arrDaysOff = daysOff.Select(i => i).ToArray() : new String[]{};
                     cmd.Parameters.AddWithValue("habitId", habitID);
                     cmd.Parameters.AddWithValue("habitName", habitName);
-                    cmd.Parameters.AddWithValue("daysOff", arrDaysOff);
+                    cmd.Parameters.AddWithValue("daysOff", daysOff);
                     cmd.Parameters.AddWithValue("userId", userID);
                     cmd.ExecuteNonQuery();
                     _transaction.Commit();
@@ -132,7 +132,7 @@ namespace HabitTracker.Infrastructure.Repository
                     Console.WriteLine(e.ToString());
                 }
             }
-            return GetUserHabit(userID, habitID);
+            return GetHabit(userID, habitID);
         }
 
         public HabitModel DeleteHabit(Guid userID, Guid habitID) {
@@ -143,7 +143,7 @@ namespace HabitTracker.Infrastructure.Repository
                 try {
                     cmd.Parameters.AddWithValue("habitId", habitID);
                     cmd.Parameters.AddWithValue("userId", userID);
-                    deletedHabit = GetUserHabit(userID, habitID);
+                    deletedHabit = GetHabit(userID, habitID);
                     if(deletedHabit == null) return deletedHabit;
                     cmd.ExecuteNonQuery();
                     _transaction.Commit();
@@ -173,7 +173,7 @@ namespace HabitTracker.Infrastructure.Repository
                     Console.WriteLine(e.ToString());
                 }
             }
-            return GetUserHabit(userID, habitID);
+            return GetHabit(userID, habitID);
         }
 
         private HabitModel bindHabitData(NpgsqlDataReader reader)
@@ -189,7 +189,7 @@ namespace HabitTracker.Infrastructure.Repository
             return habit;
         }
 
-        private Int16 getCurrentStreak(Guid habitID)
+        public Int16 GetCurrentStreak(Guid habitID)
         {
             Int16 currentStreak = 0;
             String rawQuery = @"
@@ -240,6 +240,30 @@ namespace HabitTracker.Infrastructure.Repository
                 logs.Add(DateTime.Parse(item));
             }
             return logs;
+        }
+
+        public String GetLastHabitSnapshot(Guid userID, Guid habitID)
+        {
+            String lastHabitSnapshotDateTime = "";
+            String maxQuery = @"SELECT logs_snapshot_created FROM habit_logs_snapshot
+                    WHERE last_habit_id = @habitId LIMIT 1";
+            using (var cmd = new NpgsqlCommand(maxQuery, _connection, _transaction))
+            {
+                cmd.Parameters.AddWithValue("habitId", habitID);
+                using (NpgsqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        lastHabitSnapshotDateTime = (String) reader.GetValue(0);
+                    }
+                }
+            }
+            return lastHabitSnapshotDateTime;
+        }
+        
+        public void InsertHabitLogSnapshot(Guid userID, Guid habitID, Int16 streak)
+        {
+            
         }
     }
 }
