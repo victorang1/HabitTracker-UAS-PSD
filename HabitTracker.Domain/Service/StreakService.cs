@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using HabitTracker.Domain.HabitAggregate;
-using HabitTracker.Infrastructure.Util;
 
 namespace HabitTracker.Domain.Service
 {
@@ -17,7 +16,7 @@ namespace HabitTracker.Domain.Service
 
         public void InsertLogForThisHabit(Guid userID, Guid habitID, DateTime currentDate)
         {
-            Habit habitData = new HabitMapping(_habitRepository.GetHabit(userID, habitID)).ToHabit();
+            Habit habitData = _habitRepository.GetHabit(userID, habitID);
             if(IsDifferenceDayIsOne(currentDate, GetLastLogs(habitData.Logs)))
             {
                 String strLastHabitSnapshotDT = _habitRepository.GetLastHabitSnapshot(userID, habitID);

@@ -1,5 +1,8 @@
 using System;
 
+using HabitTracker.Domain.HabitAggregate;
+using HabitTracker.Domain.UserAggregate;
+
 using Npgsql;
 using NpgsqlTypes;
 

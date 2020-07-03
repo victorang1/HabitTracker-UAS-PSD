@@ -14,17 +14,18 @@ namespace HabitTracker.Api.Controllers
   public class HabitsController : ControllerBase
   {
     private readonly ILogger<HabitsController> _logger;
+    private HabitACL dataSource;
 
     public HabitsController(ILogger<HabitsController> logger)
     {
       _logger = logger;
+      dataSource = new HabitACL(new AppHabitService());
     }
 
     [HttpGet("api/v1/users/{userID}/habits")]
     public ActionResult<IEnumerable<Habit>> All(Guid userID)
     {
-      HabitACL ds = new HabitACL(new HabitService());
-      List<Habit> habits = ds.GetAllUserHabits(userID);
+      List<Habit> habits = dataSource.GetAllUserHabits(userID);
       if(habits != null && habits.Any())
       {
         return habits;
@@ -35,8 +36,7 @@ namespace HabitTracker.Api.Controllers
     [HttpGet("api/v1/users/{userID}/habits/{id}")]
     public ActionResult<Habit> Get(Guid userID, Guid id)
     {
-      HabitACL ds = new HabitACL(new HabitService());
-      Habit habit = ds.GetHabitByID(userID, id);
+      Habit habit = dataSource.GetHabitByID(userID, id);
       if(habit != null)
       {
         return habit;
@@ -49,8 +49,7 @@ namespace HabitTracker.Api.Controllers
     {
       try
       {
-        HabitACL ds = new HabitACL(new HabitService());
-        Habit habit = ds.AddHabit(userID, data.Name, data.DaysOff);
+        Habit habit = dataSource.AddHabit(userID, data);
         if(habit != null)
         {
           return habit;
@@ -68,8 +67,7 @@ namespace HabitTracker.Api.Controllers
     {
       try
       {
-        HabitACL ds = new HabitACL(new HabitService());
-        Habit habit = ds.UpdateHabit(userID, id, data.Name, data.DaysOff);
+        Habit habit = dataSource.UpdateHabit(userID, id, data.Name, data.DaysOff);
         if(habit != null)
         {
           return habit;
@@ -85,8 +83,7 @@ namespace HabitTracker.Api.Controllers
     [HttpDelete("api/v1/users/{userID}/habits/{id}")]
     public ActionResult<Habit> DeleteHabit(Guid userID, Guid id)
     {
-      HabitACL ds = new HabitACL(new HabitService());
-      Habit habit = ds.DeleteHabit(userID, id);
+      Habit habit = dataSource.DeleteHabit(userID, id);
       if(habit != null)
       {
         return habit;
@@ -97,8 +94,7 @@ namespace HabitTracker.Api.Controllers
     [HttpPost("api/v1/users/{userID}/habits/{id}/logs")]
     public ActionResult<Habit> Log(Guid userID, Guid id)
     {
-      HabitACL ds = new HabitACL(new HabitService());
-      Habit habit = ds.InsertLog(userID, id);
+      Habit habit = dataSource.InsertLog(userID, id);
       if(habit != null)
       {
         return habit;

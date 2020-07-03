@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using HabitTracker.Infrastructure.Util;
 
 namespace HabitTracker.Infrastructure.Model
 {

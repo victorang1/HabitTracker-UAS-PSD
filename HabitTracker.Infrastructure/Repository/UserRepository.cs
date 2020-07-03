@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using HabitTracker.Infrastructure.Model;
-using HabitTracker.Infrastructure.Util;
+
+using HabitTracker.Domain.UserAggregate;
 
 using Npgsql;
 using NpgsqlTypes;
@@ -19,9 +19,10 @@ namespace HabitTracker.Infrastructure.Repository
             _transaction = transaction;
         }
 
-        public IEnumerable<BadgeModel> GetUserBadge(Guid userID)
+        public User GetUserBadge(Guid userID)
         {
-            List<BadgeModel> userBadges = new List<BadgeModel>();
+            User user = null;
+            List<Badge> userBadges = new List<Badge>();
             string rawQuery = @"
                 SELECT b.badge_id, badge_name, badge_description, user_id, bu.created_at
                 FROM badge_user bu
@@ -32,19 +33,19 @@ namespace HabitTracker.Infrastructure.Repository
                 cmd.Parameters.AddWithValue("userId", userID);
                 using (NpgsqlDataReader reader = cmd.ExecuteReader())
                 {
+                    if(reader.Read())
+                    {
+                        user = new User(reader.GetGuid(0), reader.GetString(1));
+                    }
                     while (reader.Read())
                     {
-                        BadgeModel badge = new BadgeModel();
-                        badge.BadgeID = reader.GetGuid(0);
-                        badge.Name = reader.GetString(1);
-                        badge.Description = reader.GetString(2);
-                        badge.UserID = reader.GetGuid(3);
-                        badge.CreatedAt = (DateTime) reader.GetValue(4);
+                        Badge badge = new Badge(reader.GetGuid(2), reader.GetString(3), reader.GetString(4), (DateTime) reader.GetValue(5));
                         userBadges.Add(badge);
                     }
+                    user = user.AddBadges(userBadges);
                 }
             }
-            return userBadges;
+            return user;
         }
     }
 }

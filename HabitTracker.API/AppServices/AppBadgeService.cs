@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 
 using HabitTracker.Infrastructure.Repository;
-using HabitTracker.Infrastructure.Model;
+using UserEntity = HabitTracker.Domain.UserAggregate;
 
 namespace HabitTracker.API.Services
 {
-    public class BadgeService : IBadgeService
+    public class AppBadgeService : IAppBadgeService
     {
-        public IEnumerable<BadgeModel> GetUserBadge(Guid userID)
+        public UserEntity.User GetUserBadge(Guid userID)
         {
             using(var db = new PostgresUnitOfWork())
             {

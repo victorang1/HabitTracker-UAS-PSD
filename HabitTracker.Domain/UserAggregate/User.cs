@@ -9,6 +9,24 @@ namespace HabitTracker.Domain.UserAggregate
         public String Username { get; private set; }
         public IEnumerable<Badge> Badges { get; private set; }
 
+        public User(Guid userID, String username)
+        {
+            this.UserID = userID;
+            this.Username = username;
+        }
+
+        public User(Guid userID, String username, IEnumerable<Badge> badges)
+        {
+            this.UserID = userID;
+            this.Username = username;
+            this.Badges = badges;
+        }
+
+        public User AddBadges(IEnumerable<Badge> badges)
+        {
+            return new User(this.UserID, this.Username, badges);
+        }
+
         public override bool Equals(object obj)
         {
             User user = obj as User;

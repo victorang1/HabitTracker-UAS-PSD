@@ -14,17 +14,18 @@ namespace HabitTracker.Api.Controllers
   public class BadgesController : ControllerBase
   {
     private readonly ILogger<BadgesController> _logger;
+    private BadgeACL dataSource;
 
     public BadgesController(ILogger<BadgesController> logger)
     {
       _logger = logger;
+      dataSource = new BadgeACL(new AppBadgeService());
     }
 
     [HttpGet("api/v1/users/{userID}/badges")]
     public ActionResult<IEnumerable<Badge>> All(Guid userID)
     {
-      BadgeACL ds = new BadgeACL(new BadgeService());
-      List<Badge> badges = ds.GetUserBadge(userID);
+      List<Badge> badges = dataSource.GetUserBadge(userID);
       if(badges != null && badges.Any())
       {
         return badges;

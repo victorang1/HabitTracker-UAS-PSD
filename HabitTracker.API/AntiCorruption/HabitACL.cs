@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using HabitTracker.Infrastructure.Model;
+using HabitEntity = HabitTracker.Domain.HabitAggregate;
 
 using HabitTracker.Api;
 
@@ -10,18 +10,18 @@ namespace HabitTracker.API.AntiCorruption
 {
     public class HabitACL
     {
-        private IHabitService _habitService;
-        public HabitACL(IHabitService habitService)
+        private IAppHabitService _appHabitService;
+        public HabitACL(IAppHabitService appHabitServicee)
         {
-            _habitService = habitService;
+            _appHabitService = appHabitServicee;
         }
         public List<Habit> GetAllUserHabits(Guid userID)
         {
-            IEnumerable<HabitModel> habitModels = _habitService.GetAllUserHabits(userID);
+            IEnumerable<HabitEntity.Habit> habitModels = _appHabitService.GetAllUserHabits(userID);
             if(habitModels != null && habitModels.Any())
             {
                 List<Habit> habits = new List<Habit>();
-                foreach(HabitModel item in habitModels)
+                foreach(HabitEntity.Habit item in habitModels)
                 {
                     habits.Add(bindHabitObject(item));
                 }
@@ -32,7 +32,7 @@ namespace HabitTracker.API.AntiCorruption
 
         public Habit GetHabitByID(Guid userID, Guid habitID)
         {
-            HabitModel item = _habitService.GetHabitByID(userID, habitID);
+            HabitEntity.Habit item = _appHabitService.GetHabitByID(userID, habitID);
             if(item != null)
             {
                 return bindHabitObject(item);
@@ -40,9 +40,9 @@ namespace HabitTracker.API.AntiCorruption
             return null;
         }
 
-        public Habit AddHabit(Guid userID, String name, String[] daysOff)
+        public Habit AddHabit(Guid userID, RequestData data)
         {
-            HabitModel item = _habitService.AddHabit(userID, name, daysOff);
+            HabitEntity.Habit item = _appHabitService.AddHabit(userID, data.Name, data.DaysOff);
             if(item != null)
             {
                 return bindHabitObject(item);
@@ -52,7 +52,7 @@ namespace HabitTracker.API.AntiCorruption
 
         public Habit UpdateHabit(Guid userID, Guid habitID, String name, String[] daysOff)
         {
-            HabitModel item = _habitService.UpdateHabit(userID, habitID, name, daysOff);
+            HabitEntity.Habit item = _appHabitService.UpdateHabit(userID, habitID, name, daysOff);
             if(item != null)
             {
                 return bindHabitObject(item);
@@ -62,7 +62,7 @@ namespace HabitTracker.API.AntiCorruption
 
         public Habit DeleteHabit(Guid userID, Guid habitID)
         {
-            HabitModel item = _habitService.DeleteHabit(userID, habitID);
+            HabitEntity.Habit item = _appHabitService.DeleteHabit(userID, habitID);
             if(item != null)
             {
                 return bindHabitObject(item);
@@ -72,7 +72,7 @@ namespace HabitTracker.API.AntiCorruption
 
         public Habit InsertLog(Guid userID, Guid habitID)
         {
-            HabitModel item = _habitService.InsertLog(userID, habitID);
+            HabitEntity.Habit item = _appHabitService.InsertLog(userID, habitID);
             if(item != null)
             {
                 return bindHabitObject(item);
@@ -80,12 +80,12 @@ namespace HabitTracker.API.AntiCorruption
             return null;
         }
 
-        private Habit bindHabitObject(HabitModel model)
+        private Habit bindHabitObject(HabitEntity.Habit model)
         {
             Habit habit = new Habit();
             habit.ID = model.HabitID;
-            habit.Name = model.HabitName;
-            habit.DaysOff = model.DaysOff;
+            habit.Name = model.Name.HabitName;
+            habit.DaysOff = model.DaysOff.daysOff;
             habit.CurrentStreak = model.CurrentStreak;
             habit.LongestStreak = model.LongestStreak;
             habit.LogCount = model.LogCount;

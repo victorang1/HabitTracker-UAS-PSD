@@ -6,35 +6,23 @@ namespace HabitTracker.Domain.UserAggregate
 {
     public class Badge
     {
-        public String _name;
-        public String _description;
+        public Guid BadgeID { get; private set; }
+        public String Name { get; private set; }
+        public String Description { get; private set; }
+        public DateTime CreatedAt { get; private set; }
 
         private List<String> listBadges = new List<String>(new []{ 
             "Dominating",
             "Workaholic",
             "Epic Comeback"});
 
-        public String Name
-        {
-            get
-            {
-                return _name;
-            }
-        }
-
-        public String Description
-        {
-            get
-            {
-                return _description;
-            }
-        }
-
-        public Badge(String name, String description)
+        public Badge(Guid badgeID, String name, String description, DateTime createdAt)
         {
             if(!IsValid(name)) throw new Exception("Badge Is Invalid");
-            this._name = name;
-            this._description = description;
+            this.BadgeID = badgeID;
+            this.Name = name;
+            this.Description = description;
+            this.CreatedAt = createdAt;
         }
 
         private bool IsValid(string name)

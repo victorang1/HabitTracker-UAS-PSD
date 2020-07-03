@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using HabitTracker.Infrastructure.Util;
-using HabitTracker.Infrastructure.Model;
 
 namespace HabitTracker.Domain.HabitAggregate
 {
@@ -17,26 +15,26 @@ namespace HabitTracker.Domain.HabitAggregate
         public Guid UserID { get; private set; }
         public DateTime CreatedAt { get; set; }
 
+        public Habit(Guid habitID, Name habitName, DaysOff daysOff, Int16 currentStreak, Int16 longestStreak, Int16 logCount, IEnumerable<DateTime> logs, Guid userID, DateTime createdAt)
+        {
+            this.HabitID = habitID;
+            this.Name = habitName;
+            this.DaysOff = daysOff;
+            this.CurrentStreak = currentStreak;
+            this.LongestStreak = longestStreak;
+            this.LogCount = logCount;
+            this.Logs = logs;
+            this.UserID = userID;
+            this.CreatedAt = createdAt;
+        }
+
         public Habit(Guid userID, Guid HabitID, String habitName, String[] daysOff)
         {
             this.UserID = userID;
             this.HabitID = HabitID;
             this.Name = new Name(habitName);
             this.DaysOff = new DaysOff(daysOff);
-            this.CreatedAt = DateTime.Parse(DateUtil.GetServerDateTimeFormat());
-        }
-
-        public Habit(HabitModel model)
-        {
-            this.HabitID = model.HabitID;
-            this.Name = new Name(model.HabitName);
-            this.DaysOff = new DaysOff(model.DaysOff);
-            this.CurrentStreak = model.CurrentStreak;
-            this.LongestStreak = model.LongestStreak;
-            this.LogCount = model.LogCount;
-            this.Logs = model.Logs;
-            this.UserID = model.UserID;
-            this.CreatedAt = model.CreatedAt;
+            this.CreatedAt = DateTime.Parse(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
         }
 
         public static Habit NewHabit(Guid userID, Guid HabitID, String habitName, String[] daysOff)

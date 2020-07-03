@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using HabitTracker.Infrastructure.Model;
-using HabitTracker.Infrastructure.Util;
 using System.Linq;
+
+using HabitTracker.Domain.HabitAggregate;
 
 using Npgsql;
 using NpgsqlTypes;
@@ -20,14 +20,25 @@ namespace HabitTracker.Infrastructure.Repository
             _transaction = transaction;
         }
 
-        public IEnumerable<HabitModel> GetAllHabit(Guid userID)
+        public IEnumerable<Habit> GetAllHabit(Guid userID)
         {
-            List<HabitModel> listHabit = new List<HabitModel>();
+            List<Habit> listHabit = new List<Habit>();
             string rawQuery = @"
             SELECT 
                 h.habit_id, 
                 habit_name, 
                 days_off,
+                (
+                    SELECT coalesce(last_streak, 0) as current_streak FROM habit_logs_snapshot
+                    WHERE last_habit_id = h.habit_id
+                    AND logs_snapshot_created::date = logs_snapshot_created::date
+                    ORDER BY logs_snapshot_created DESC
+                    LIMIT 1
+                ),
+                (
+                    SELECT coalesce(max(last_streak), 0) longest_streak FROM habit_logs_snapshot
+                    WHERE last_habit_id = h.habit_id
+                ),
                 coalesce(COUNT(logs_id), 0) as log_count, 
                 string_agg(coalesce(logs_created::varchar, ''), ',') as logs, 
                 h.user_id,
@@ -43,25 +54,47 @@ namespace HabitTracker.Infrastructure.Repository
                 {
                     while (reader.Read())
                     {
-                        listHabit.Add(bindHabitData(reader));
+                        Int16 currentStreak = (Int16) 0;
+                        if(!reader.IsDBNull(3))
+                        {
+                            currentStreak = reader.GetInt16(3);
+                        }
+                        Habit habit = new Habit(
+                            reader.GetGuid(0),
+                            new Name(reader.GetString(1)),
+                            new DaysOff((String[]) reader.GetValue(2)),
+                            currentStreak,
+                            reader.GetInt16(4),
+                            reader.GetInt16(5),
+                            getLogs(reader.GetString(6)),
+                            reader.GetGuid(7),
+                            (DateTime) reader.GetValue(8)
+                        );
+                        listHabit.Add(habit);
                     }
                 }
             }
-            foreach(HabitModel model in listHabit)
-            {
-                model.CurrentStreak = GetCurrentStreak(model.HabitID);
-                model.LongestStreak = getLongestStreak(model.HabitID);
-            }
             return listHabit;
         }
-        public HabitModel GetHabit(Guid userID, Guid habitID)
+        public Habit GetHabit(Guid userID, Guid habitID)
         {
-            HabitModel habit = null;
+            Habit habit = null;
             string rawQuery = @"
             SELECT 
                 h.habit_id, 
                 habit_name, 
                 days_off,
+                (
+                    SELECT coalesce(last_streak, 0) as current_streak FROM habit_logs_snapshot
+                    WHERE last_habit_id = h.habit_id
+                    AND logs_snapshot_created::date = logs_snapshot_created::date
+                    ORDER BY logs_snapshot_created DESC
+                    LIMIT 1
+                ),
+                (
+                    SELECT coalesce(max(last_streak), 0) longest_streak FROM habit_logs_snapshot
+                    WHERE last_habit_id = h.habit_id
+                ),
                 coalesce(COUNT(logs_id), 0) as log_count, 
                 string_agg(coalesce(logs_created::varchar, ''), ',') as logs, 
                 h.user_id,
@@ -78,17 +111,28 @@ namespace HabitTracker.Infrastructure.Repository
                 {
                     while (reader.Read())
                     {
-                        habit = bindHabitData(reader);
+                        Int16 currentStreak = (Int16) 0;
+                        if(!reader.IsDBNull(3))
+                        {
+                            currentStreak = reader.GetInt16(3);
+                        }
+                        habit = new Habit(
+                            reader.GetGuid(0),
+                            new Name(reader.GetString(1)),
+                            new DaysOff((String[]) reader.GetValue(2)),
+                            currentStreak,
+                            reader.GetInt16(4),
+                            reader.GetInt16(5),
+                            getLogs(reader.GetString(6)),
+                            reader.GetGuid(7),
+                            (DateTime) reader.GetValue(8)
+                        );
                     }
                 }
             }
-            if(habit != null) {
-                habit.CurrentStreak = GetCurrentStreak(habit.HabitID);
-                habit.LongestStreak = getLongestStreak(habit.HabitID);
-            }
             return habit;
         }
-        public HabitModel AddHabit(Guid userID, String habitName, String[] daysOff) {
+        public Habit AddHabit(Guid userID, String habitName, String[] daysOff) {
             string rawQuery = 
                 @"INSERT INTO habit VALUES (@habitId, @habitName, @daysOff, @userId, @createdAt)";
             using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
@@ -101,7 +145,7 @@ namespace HabitTracker.Infrastructure.Repository
                     cmd.Parameters.AddWithValue("habitName", habitName);
                     cmd.Parameters.AddWithValue("daysOff", daysOff);
                     cmd.Parameters.AddWithValue("userId", userID);
-                    cmd.Parameters.AddWithValue("createdAt", DateTime.Parse(DateUtil.GetServerDateTimeFormat()));
+                    cmd.Parameters.AddWithValue("createdAt", DateTime.Parse(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")));
                     cmd.ExecuteNonQuery();
                     _transaction.Commit();
                     return GetHabit(userID, habitID);
@@ -112,7 +156,7 @@ namespace HabitTracker.Infrastructure.Repository
             }
             return null;
         }
-        public HabitModel UpdateHabit(Guid userID, Guid habitID, String habitName, String[] daysOff) {
+        public Habit UpdateHabit(Guid userID, Guid habitID, String habitName, String[] daysOff) {
             string rawQuery = 
                 @"UPDATE habit SET habit_name = @habitName, days_off = @daysOff
                     WHERE habit_id = @habitId AND user_id = @userId";
@@ -135,8 +179,8 @@ namespace HabitTracker.Infrastructure.Repository
             return GetHabit(userID, habitID);
         }
 
-        public HabitModel DeleteHabit(Guid userID, Guid habitID) {
-            HabitModel deletedHabit = null;
+        public Habit DeleteHabit(Guid userID, Guid habitID) {
+            Habit deletedHabit = null;
             string rawQuery = @"DELETE FROM habit WHERE user_id = @userId AND habit_id = @habitId";
             using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
             {
@@ -156,7 +200,7 @@ namespace HabitTracker.Infrastructure.Repository
             return deletedHabit;
         }
 
-        public HabitModel InsertHabitLog(Guid userID, Guid habitID)
+        public Habit InsertHabitLog(Guid userID, Guid habitID)
         {
             string rawQuery = 
                 @"INSERT INTO habit_logs VALUES (@logsId, @habitId, @userId)";
@@ -174,61 +218,6 @@ namespace HabitTracker.Infrastructure.Repository
                 }
             }
             return GetHabit(userID, habitID);
-        }
-
-        private HabitModel bindHabitData(NpgsqlDataReader reader)
-        {
-            HabitModel habit = new HabitModel();
-            habit.HabitID = reader.GetGuid(0);
-            habit.HabitName = reader.GetString(1);
-            habit.DaysOff = (String[]) reader.GetValue(2);
-            habit.LogCount = reader.GetInt16(3);
-            habit.Logs = getLogs(reader.GetString(4));
-            habit.UserID = reader.GetGuid(5);
-            habit.CreatedAt = (DateTime) reader.GetValue(6);
-            return habit;
-        }
-
-        public Int16 GetCurrentStreak(Guid habitID)
-        {
-            Int16 currentStreak = 0;
-            String rawQuery = @"
-                    SELECT coalesce(last_streak, 0) FROM habit_logs_snapshot
-                    WHERE last_habit_id = @habitId
-                    AND logs_snapshot_created::date = @currDate::date
-                    ORDER BY logs_snapshot_created DESC
-                    LIMIT 1";
-            using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
-            {
-                cmd.Parameters.AddWithValue("habitId", habitID);
-                cmd.Parameters.AddWithValue("currDate", DateUtil.GetServerDateTimeFormat());
-                using (NpgsqlDataReader reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        currentStreak = reader.GetInt16(0);
-                    }
-                }
-            }
-            return currentStreak;
-        }
-        private Int16 getLongestStreak(Guid habitID)
-        {
-            Int16 longestStreak = 0;
-            String maxQuery = @"SELECT coalesce(max(last_streak), 0) FROM habit_logs_snapshot
-                    WHERE last_habit_id = @habitId";
-            using (var cmd = new NpgsqlCommand(maxQuery, _connection, _transaction))
-            {
-                cmd.Parameters.AddWithValue("habitId", habitID);
-                using (NpgsqlDataReader reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        longestStreak = reader.GetInt16(0);
-                    }
-                }
-            }
-            return longestStreak;
         }
         
         private List<DateTime> getLogs(String tempLogs)
@@ -263,7 +252,7 @@ namespace HabitTracker.Infrastructure.Repository
         
         public void InsertHabitLogSnapshot(Guid userID, Guid habitID, Int16 streak)
         {
-            
+
         }
     }
 }
