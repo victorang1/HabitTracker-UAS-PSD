@@ -26,5 +26,29 @@ namespace HabitTracker.Domain.Service
             Habit habit = Habit.NewHabit(userID, habitID, name, daysOff);
             return _habitRepository.UpdateHabit(habit.UserID, habit.HabitID, habit.Name.HabitName, habit.DaysOff.daysOff);
         }
+
+        public Boolean CheckDominating(Guid userID, Guid habitID)
+        {
+            return _habitRepository.GetHabit(userID, habitID).CurrentStreak == 4;
+        }
+
+        public Boolean CheckWorkaholic(Guid userID)
+        {
+            return _habitRepository.GetTotalLogOnHolidays(userID) == 10;
+        }
+
+        public Boolean CheckEpicComeback(Guid userID, Guid habitID)
+        {
+            Habit habit = _habitRepository.GetHabit(userID, habitID);
+            if(habit.CurrentStreak == 10)
+            {
+                DateTime firstStreakDay = _habitRepository.GetFirstFromTenStreakDay(userID, habitID);
+                DateTime lastDayBeforeStreak = _habitRepository.GetLastDayBeforeTenStreak(userID, habitID, firstStreakDay);
+                if(firstStreakDay == null || lastDayBeforeStreak == null) return false;
+                if(lastDayBeforeStreak == null) return true;
+                return firstStreakDay.Date - lastDayBeforeStreak.Date >= TimeSpan.FromDays(10);
+            }
+            return false;
+        }
     }
 }

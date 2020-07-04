@@ -31,7 +31,7 @@ namespace HabitTracker.Infrastructure.Repository
                 (
                     SELECT coalesce(last_streak, 0) as current_streak FROM habit_logs_snapshot
                     WHERE last_habit_id = h.habit_id
-                    AND logs_snapshot_created::date = logs_snapshot_created::date
+                    AND logs_snapshot_created::date = @currDate::date
                     ORDER BY logs_snapshot_created DESC
                     LIMIT 1
                 ),
@@ -50,6 +50,7 @@ namespace HabitTracker.Infrastructure.Repository
             using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
             {
                 cmd.Parameters.AddWithValue("userId", userID);
+                cmd.Parameters.AddWithValue("currDate", "2020-07-07T16:49:28.223996+07:00");
                 using (NpgsqlDataReader reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -87,7 +88,7 @@ namespace HabitTracker.Infrastructure.Repository
                 (
                     SELECT coalesce(last_streak, 0) as current_streak FROM habit_logs_snapshot
                     WHERE last_habit_id = h.habit_id
-                    AND logs_snapshot_created::date = logs_snapshot_created::date
+                    AND logs_snapshot_created::date = @currDate::date
                     ORDER BY logs_snapshot_created DESC
                     LIMIT 1
                 ),
@@ -107,6 +108,7 @@ namespace HabitTracker.Infrastructure.Repository
             {
                 cmd.Parameters.AddWithValue("userId", userID);
                 cmd.Parameters.AddWithValue("habitId", habitID);
+                cmd.Parameters.AddWithValue("currDate", "2020-07-30 16:49:28.223996+07");
                 using (NpgsqlDataReader reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -200,16 +202,18 @@ namespace HabitTracker.Infrastructure.Repository
             return deletedHabit;
         }
 
-        public Habit InsertHabitLog(Guid userID, Guid habitID)
+        public Habit InsertHabitLog(Guid userID, Guid habitID, DateTime currentDate, Boolean isHoliday)
         {
             string rawQuery = 
-                @"INSERT INTO habit_logs VALUES (@logsId, @habitId, @userId)";
+                @"INSERT INTO habit_logs VALUES (@logsId, @habitId, @userId, @createdAt, @isHoliday)";
             using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
             {
                 try {
                     cmd.Parameters.AddWithValue("logsId", Guid.NewGuid());
                     cmd.Parameters.AddWithValue("habitId", habitID);
                     cmd.Parameters.AddWithValue("userId", userID);
+                    cmd.Parameters.AddWithValue("createdAt", currentDate);
+                    cmd.Parameters.AddWithValue("isHoliday", isHoliday);
                     cmd.ExecuteNonQuery();
                     _transaction.Commit();
                 } catch(Exception e)
@@ -235,7 +239,9 @@ namespace HabitTracker.Infrastructure.Repository
         {
             String lastHabitSnapshotDateTime = "";
             String maxQuery = @"SELECT logs_snapshot_created FROM habit_logs_snapshot
-                    WHERE last_habit_id = @habitId LIMIT 1";
+                    WHERE last_habit_id = @habitId
+                    ORDER BY logs_snapshot_created DESC
+                    LIMIT 1";
             using (var cmd = new NpgsqlCommand(maxQuery, _connection, _transaction))
             {
                 cmd.Parameters.AddWithValue("habitId", habitID);
@@ -243,16 +249,151 @@ namespace HabitTracker.Infrastructure.Repository
                 {
                     while (reader.Read())
                     {
-                        lastHabitSnapshotDateTime = (String) reader.GetValue(0);
+                        lastHabitSnapshotDateTime = ((DateTime) reader.GetValue(0)).ToString();
                     }
                 }
             }
             return lastHabitSnapshotDateTime;
         }
-        
-        public void InsertHabitLogSnapshot(Guid userID, Guid habitID, Int16 streak)
-        {
 
+        public Int16 GetHabitCurrentStreak(Guid userID, Guid habitID)
+        {
+            Int16 currentStreak = (Int16) 0;
+            String maxQuery = @"SELECT coalesce(last_streak, 0) FROM habit_logs_snapshot
+                    WHERE last_user_id = @userId AND last_habit_id = @habitId 
+                    ORDER BY logs_snapshot_created DESC
+                    LIMIT 1";
+            using (var cmd = new NpgsqlCommand(maxQuery, _connection, _transaction))
+            {
+                cmd.Parameters.AddWithValue("userId", userID);
+                cmd.Parameters.AddWithValue("habitId", habitID);
+                using (NpgsqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        if(!reader.IsDBNull(0))
+                        {
+                            currentStreak = (Int16) reader.GetInt16(0);
+                        }
+                    }
+                }
+            }
+            return currentStreak;
+        }
+        
+        public void InsertHabitLogSnapshot(Guid userID, Guid habitID, Int16 streak, DateTime currentDate)
+        {
+            string rawQuery = 
+                @"INSERT INTO habit_logs_snapshot VALUES (
+                    @logsSnapshotId
+                    , @habitId
+                    , @userId
+                    , @streak
+                    , @createdAt
+                )";
+            using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
+            {
+                try {
+                    cmd.Parameters.AddWithValue("logsSnapshotId", Guid.NewGuid());
+                    cmd.Parameters.AddWithValue("habitId", habitID);
+                    cmd.Parameters.AddWithValue("userId", userID);
+                    cmd.Parameters.AddWithValue("streak", streak);
+                    cmd.Parameters.AddWithValue("createdAt", currentDate);
+                    cmd.ExecuteNonQuery();
+                } 
+                catch(Exception e)
+                {
+                    Console.WriteLine("Insert snapshot error:" + e.Message);
+                    throw new Exception("Insert snapshot failed");
+                }
+            }
+        }
+
+        public Int16 GetTotalLogOnHolidays(Guid userID)
+        {
+            Int16 total = (Int16) 0;
+            String rawQuery = @"SELECT coalesce(COUNT(isHoliday), 0) FROM habit_logs
+            WHERE isHoliday = true AND user_id = @userId";
+            using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
+            {
+                cmd.Parameters.AddWithValue("userId", userID);
+                using (NpgsqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        total = reader.GetInt16(0);
+                    }
+                }
+            }
+            return total;
+        }
+
+        public DateTime GetFirstFromTenStreakDay(Guid userID, Guid habitID)
+        {
+            DateTime secondStreakDay = new DateTime();
+
+            String query = @"SELECT logs_snapshot_created FROM habit_logs_snapshot 
+                WHERE last_habit_id = @habitId AND last_user_id = @userId
+                ORDER BY logs_snapshot_created DESC
+                LIMIT 9";
+            using (var cmd = new NpgsqlCommand(query, _connection, _transaction))
+            {
+                cmd.Parameters.AddWithValue("userId", userID);
+                cmd.Parameters.AddWithValue("habitId", habitID);
+                using (NpgsqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        secondStreakDay = (DateTime) reader.GetValue(0);
+                    }
+                }
+            }
+
+            DateTime firstStreakDay = new DateTime();
+            String firstQuery = @"SELECT logs_created FROM habit_logs
+                WHERE logs_created::date < @currDate::date
+                AND habit_id = @habitId
+                ORDER BY logs_created DESC
+                LIMIT 1";
+            using (var cmd = new NpgsqlCommand(firstQuery, _connection, _transaction))
+            {
+                cmd.Parameters.AddWithValue("habitId", habitID);
+                cmd.Parameters.AddWithValue("userId", userID);
+                cmd.Parameters.AddWithValue("currDate", secondStreakDay);
+                using (NpgsqlDataReader reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        Console.WriteLine("Test");
+                        firstStreakDay = (DateTime) reader.GetValue(0);
+                    }
+                }
+            }
+            return firstStreakDay;
+        }
+
+        public DateTime GetLastDayBeforeTenStreak(Guid userID, Guid habitID, DateTime firstStreakDay)
+        {
+            DateTime lastDayBeforeStreak = new DateTime();
+            String firstQuery = @"SELECT logs_created FROM habit_logs
+                WHERE logs_created::date < @currDate::date
+                AND habit_id = @habitId
+                ORDER BY logs_created DESC
+                LIMIT 1";
+            using (var cmd = new NpgsqlCommand(firstQuery, _connection, _transaction))
+            {
+                cmd.Parameters.AddWithValue("habitId", habitID);
+                cmd.Parameters.AddWithValue("userId", userID);
+                cmd.Parameters.AddWithValue("currDate", firstStreakDay);
+                using (NpgsqlDataReader reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        lastDayBeforeStreak = (DateTime) reader.GetValue(0);
+                    }
+                }
+            }
+            return lastDayBeforeStreak;
         }
     }
 }

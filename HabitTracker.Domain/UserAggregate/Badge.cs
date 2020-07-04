@@ -16,6 +16,13 @@ namespace HabitTracker.Domain.UserAggregate
             "Workaholic",
             "Epic Comeback"});
 
+        public Badge(Guid badgeID, String name, String description)
+        {
+            this.BadgeID = badgeID;
+            this.Name = name;
+            this.Description = description;
+        }
+
         public Badge(Guid badgeID, String name, String description, DateTime createdAt)
         {
             if(!IsValid(name)) throw new Exception("Badge Is Invalid");

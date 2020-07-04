@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace HabitTracker.Domain.UserAggregate
@@ -8,6 +9,11 @@ namespace HabitTracker.Domain.UserAggregate
         public Guid UserID { get; private set; }
         public String Username { get; private set; }
         public IEnumerable<Badge> Badges { get; private set; }
+
+        public User()
+        {
+            
+        }
 
         public User(Guid userID, String username)
         {
@@ -25,6 +31,18 @@ namespace HabitTracker.Domain.UserAggregate
         public User AddBadges(IEnumerable<Badge> badges)
         {
             return new User(this.UserID, this.Username, badges);
+        }
+
+        public Boolean IsBadgeExists(String name)
+        {
+            if(this.Badges != null && Badges.Any())
+            {
+                foreach(Badge badge in Badges)
+                {
+                    if(badge.Name.Equals(name)) return true;
+                }
+            }
+            return false;
         }
 
         public override bool Equals(object obj)
