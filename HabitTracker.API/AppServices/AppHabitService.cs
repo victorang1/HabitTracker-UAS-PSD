@@ -54,8 +54,8 @@ namespace HabitTracker.API.Services
         {
             using(var db = new PostgresUnitOfWork())
             {
-                IStreakCalculationService service = new StreakCalculationService(db.HabitRepository);
-                return service.InsertLogForThisHabit(userID, habitID, DateTime.Parse("2020-07-12 16:49:28.223996+07"));
+                IStreakCalculationService service = new StreakCalculationService(db.HabitRepository, db.UserRepository);
+                return service.InsertHabitLog(userID, habitID, DateTime.Parse("2020-07-30 16:49:28.223996+07"));
             }
         }
     }
