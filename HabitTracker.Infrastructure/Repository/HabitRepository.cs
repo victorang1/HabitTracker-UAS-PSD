@@ -112,7 +112,7 @@ namespace HabitTracker.Infrastructure.Repository
                 cmd.Parameters.AddWithValue("habitId", habitID);
                 cmd.Parameters.AddWithValue("currDate", DateTime.Now);
                 // For manual testing
-                // cmd.Parameters.AddWithValue("currDate", "2020-07-11T16:49:28.223996+07:00");
+                // cmd.Parameters.AddWithValue("currDate", "2020-07-13T16:49:28.223996+07:00");
                 using (NpgsqlDataReader reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())

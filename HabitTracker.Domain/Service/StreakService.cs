@@ -7,14 +7,13 @@ using HabitTracker.Domain.Event;
 
 namespace HabitTracker.Domain.Service
 {
-    public class StreakCalculationService : IStreakCalculationService, IObservable<LogCreated>
+    public class StreakCalculationService : IStreakCalculationService
     {
         private IHabitRepository _habitRepository;
         private IUserRepository _userRepository;
 
         private IHabitService _habitService;
         private IBadgeService _badgeService;
-        protected List<IObserver<LogCreated>> _observers = new List<IObserver<LogCreated>>();
 
         public StreakCalculationService(IHabitRepository habitRepository, IUserRepository userRepository)
         {
@@ -29,12 +28,15 @@ namespace HabitTracker.Domain.Service
             Habit thisHabit = _habitRepository.GetHabit(userID, habitID);
             if(thisHabit != null)
             {
-                Attach(new LogCreatedHandler(_habitService, _badgeService));
                 try 
                 {
-                    Habit habit = InsertLogForThisHabit(userID, habitID, currentDate);
-                    Broadcast(new LogCreated(userID, habitID));
-                    return habit;
+                    LogCreatedHandler handler = new LogCreatedHandler(_habitService, _badgeService);
+                    using(DomainEvents.Register<LogCreated>(ev => handler.Handle(ev)))
+                    {
+                        Habit habit = InsertLogForThisHabit(userID, habitID, currentDate);
+                        DomainEvents.Raise(new LogCreated(userID, habitID));
+                        return habit;
+                    }
                 }
                 catch (Exception e)
                 {
@@ -48,17 +50,16 @@ namespace HabitTracker.Domain.Service
         public Habit InsertLogForThisHabit(Guid userID, Guid habitID, DateTime currentDate)
         {
             Habit habitData = _habitRepository.GetHabit(userID, habitID);
-            String[] daysOff = habitData.Holidays;
             String strLastLog = getLastLogs(habitData.Logs);
             if(strLastLog != null && !strLastLog.Equals(""))
             {
                 DateTime lastLog = DateTime.Parse(strLastLog);
-                if(checkValid(currentDate, lastLog, daysOff) && !isSameDay(currentDate, lastLog))
+                if(checkValid(currentDate, lastLog, habitData.DaysOff) && !isSameDay(currentDate, lastLog))
                 {
                     String strLastHabitSnapshotDT = _habitRepository.GetLastHabitSnapshot(userID, habitID);
                     Int16 currentStreak = _habitRepository.GetHabitCurrentStreak(userID, habitID);
                     if(!strLastHabitSnapshotDT.Equals("") 
-                        && checkValid(currentDate, DateTime.Parse(strLastHabitSnapshotDT), daysOff))
+                        && checkValid(currentDate, DateTime.Parse(strLastHabitSnapshotDT), habitData.DaysOff))
                     {
                         Int16 streakToInput = (Int16) (currentStreak + 1);
                         _habitRepository.InsertHabitLogSnapshot(userID, habitID, streakToInput, currentDate);
@@ -68,26 +69,13 @@ namespace HabitTracker.Domain.Service
                     }
                 }
             }
-            Boolean isHoliday = inHolidays(currentDate, daysOff);
+            Boolean isHoliday = habitData.DaysOff.InHolidays(currentDate);
             _habitRepository.InsertHabitLog(userID, habitID, currentDate, isHoliday);
             Habit latestHabitData = _habitRepository.GetHabit(userID, habitID);
             return latestHabitData;
         }
 
-        public void Attach(IObserver<LogCreated> obs)
-        {
-            _observers.Add(obs);
-        }
-
-        public void Broadcast(LogCreated evnt)
-        {
-            foreach (var obs in _observers)
-            {
-                obs.Handle(evnt);
-            }
-        }
-
-        private Boolean isStreakStillValid(DateTime currentDate, String strLastLog, String[] daysOff)
+        private Boolean isStreakStillValid(DateTime currentDate, String strLastLog, DaysOff daysOff)
         {
             if(strLastLog == null || strLastLog.Equals("")) return false;
             else
@@ -101,7 +89,7 @@ namespace HabitTracker.Domain.Service
                 }
                 for(var i = currentDate.Date.AddDays(-1); i > lastLog.Date;  i = i.AddDays(-1))
                 {
-                    if(!inHolidays(i, daysOff))
+                    if(!daysOff.InHolidays(i))
                     {
                         return false;
                     }
@@ -110,22 +98,10 @@ namespace HabitTracker.Domain.Service
             return true;
         }
 
-        private Boolean checkValid(DateTime currentDate, DateTime lastLog, String[] daysOff)
+        private Boolean checkValid(DateTime currentDate, DateTime lastLog, DaysOff daysOff)
         {
             return (isDifferenceDayIsOne(lastLog, currentDate)
                     || isStreakStillValid(currentDate, lastLog.ToString(), daysOff));
-        }
-
-        private Boolean inHolidays(DateTime currentDate, String[] daysOff)
-        {
-            foreach(String str in daysOff)
-            {
-                if(currentDate.ToString("ddd").Equals(str))
-                {
-                    return true;
-                }
-            }
-            return false;
         }
 
         private String getLastLogs(IEnumerable<DateTime> logs)

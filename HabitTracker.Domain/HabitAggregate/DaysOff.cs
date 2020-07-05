@@ -35,5 +35,18 @@ namespace HabitTracker.Domain.HabitAggregate
             return daysOff.GroupBy(x => x)
                 .Any(c => c.Count() > 1);
         }
+
+        public Boolean InHolidays(DateTime currentDate)
+        {
+            foreach(String str in Holidays)
+            {
+                if(currentDate.ToString("ddd").Equals(str))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
     }
 }
