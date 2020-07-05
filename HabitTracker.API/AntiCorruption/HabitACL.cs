@@ -85,7 +85,7 @@ namespace HabitTracker.API.AntiCorruption
             Habit habit = new Habit();
             habit.ID = model.HabitID;
             habit.Name = model.Name.HabitName;
-            habit.DaysOff = model.DaysOff.daysOff;
+            habit.DaysOff = model.Holidays;
             habit.CurrentStreak = model.CurrentStreak;
             habit.LongestStreak = model.LongestStreak;
             habit.LogCount = model.LogCount;
