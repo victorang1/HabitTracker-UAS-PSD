@@ -51,7 +51,7 @@ namespace HabitTracker.API.Services
         {
             return _streakService.InsertHabitLog(userID, habitID, DateTime.Now);
             //For manual testing insert log
-            // return _streakService.InsertHabitLog(userID, habitID, DateTime.Parse("2020-07-19 16:49:28.223996+07"));
+            // return _streakService.InsertHabitLog(userID, habitID, DateTime.Parse("2020-07-13 16:49:28.223996+07"));
         }
     }
 }
