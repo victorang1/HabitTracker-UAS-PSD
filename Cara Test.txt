@@ -1,0 +1,19 @@
+Maap ko, karena dikodingan saya bikin streaknya baru bisa didapat
+dari tanggal hari sekarang, jadi kalo mau testnya mesti masukin manual
+(Kecuali testnya beneran perhari) 
+(Tapi semua defaultnya saya bikin DateTime.Now)
+
+Kalo emang testnya perhari/ada cara lainnya abaikan yang dibawah ko maap
+
+- Buat ngecek streak yang GetAllHabit (Tapi defaultnya saya DateTime.Now)
+perlu masukin tanggal di mana streaknya terjadi diline(54-55)
+
+- Buat ngecek streak yang GetHabit (Tapi defaultnya saya DateTime.Now)
+di line(114-115)
+
+- Buat insert manual habit lognya saya juga bikin biar bisa 
+input manual tangggalnya
+Ada di AppHabitService.cs line 53-54 
+(Tapi defaultnya saya bikin DateTime.Now)
+
+Terimakasih Ko.

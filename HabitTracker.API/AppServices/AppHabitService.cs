@@ -49,7 +49,9 @@ namespace HabitTracker.API.Services
         }
         public HabitEntity.Habit InsertLog(Guid userID, Guid habitID)
         {
-            return _streakService.InsertHabitLog(userID, habitID, DateTime.Parse("2020-07-19 16:49:28.223996+07"));
+            return _streakService.InsertHabitLog(userID, habitID, DateTime.Now);
+            //For manual testing insert log
+            // return _streakService.InsertHabitLog(userID, habitID, DateTime.Parse("2020-07-19 16:49:28.223996+07"));
         }
     }
 }
