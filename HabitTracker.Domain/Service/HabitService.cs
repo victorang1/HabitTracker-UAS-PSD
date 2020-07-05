@@ -18,13 +18,28 @@ namespace HabitTracker.Domain.Service
         public Habit Create(Guid userID, String habitName, String[] daysOff)
         {
             Habit habit = Habit.NewHabit(userID, habitName, daysOff);
-            return _habitRepository.AddHabit(habit.UserID, habit.Name.HabitName, habit.DaysOff.daysOff);
+            return _habitRepository.AddHabit(habit.UserID, habit.HabitName, habit.Holidays);
         }
 
         public Habit Update(Guid userID, Guid habitID, String name, String[] daysOff)
         {
-            Habit habit = Habit.NewHabit(userID, habitID, name, daysOff);
-            return _habitRepository.UpdateHabit(habit.UserID, habit.HabitID, habit.Name.HabitName, habit.DaysOff.daysOff);
+            Habit habitToBeUpdated = _habitRepository.GetHabit(userID, habitID);
+            if(habitToBeUpdated != null)
+            {
+                Habit habit = Habit.NewHabit(userID, habitID, name, daysOff);
+                return _habitRepository.UpdateHabit(habit.UserID, habit.HabitID, habit.HabitName, habit.Holidays);
+            }
+            throw new Exception("This user with habit id " + habitID + " not found");
+        }
+
+        public Habit Delete(Guid userID, Guid habitID)
+        {
+            Habit habitToBeDeleted = _habitRepository.GetHabit(userID, habitID);
+            if(habitToBeDeleted != null)
+            {
+                return _habitRepository.DeleteHabit(userID, habitID);
+            }
+            throw new Exception("This user with habit id " + habitID + " not found");
         }
 
         public Boolean CheckDominating(Guid userID, Guid habitID)
@@ -43,10 +58,15 @@ namespace HabitTracker.Domain.Service
             if(habit.CurrentStreak == 10)
             {
                 DateTime firstStreakDay = _habitRepository.GetFirstFromTenStreakDay(userID, habitID);
-                DateTime lastDayBeforeStreak = _habitRepository.GetLastDayBeforeTenStreak(userID, habitID, firstStreakDay);
-                if(firstStreakDay == null || lastDayBeforeStreak == null) return false;
-                if(lastDayBeforeStreak == null) return true;
-                return firstStreakDay.Date - lastDayBeforeStreak.Date >= TimeSpan.FromDays(10);
+                String lastDayBeforeStreakStr = _habitRepository.GetLastDayBeforeTenStreak(userID, habitID, firstStreakDay);
+                if(firstStreakDay == null && lastDayBeforeStreakStr.Equals("")) return false;
+                if(lastDayBeforeStreakStr.Equals("")) 
+                {
+                    DateTime habitCreatedAt = habit.CreatedAt;
+                    if(firstStreakDay.Date - habitCreatedAt.Date >= TimeSpan.FromDays(10)) return true;
+                    return false;
+                }
+                return firstStreakDay.Date - DateTime.Parse(lastDayBeforeStreakStr).Date >= TimeSpan.FromDays(10);
             }
             return false;
         }

@@ -10,6 +10,15 @@ namespace HabitTracker.API.Services
 {
     public class AppHabitService : IAppHabitService
     {
+        private IHabitService _habitService;
+        private IStreakCalculationService _streakService;
+
+        public AppHabitService(IHabitService habitService, IStreakCalculationService streakService)
+        {
+            _habitService = habitService;
+            _streakService = streakService;
+        }
+        
         public IEnumerable<HabitEntity.Habit> GetAllUserHabits(Guid userID)
         {
             using(var db = new PostgresUnitOfWork())
@@ -27,35 +36,20 @@ namespace HabitTracker.API.Services
         }
         public HabitEntity.Habit AddHabit(Guid userID, String name, String[] daysOff)
         {
-            using(var db = new PostgresUnitOfWork())
-            {
-                IHabitService service = new HabitService(db.HabitRepository);
-                return service.Create(userID, name, daysOff);
-            }
+            return _habitService.Create(userID, name, daysOff);
         }
         public HabitEntity.Habit UpdateHabit(Guid userID, Guid habitID, String name, String[] daysOff)
         {
-            using(var db = new PostgresUnitOfWork())
-            {
-                IHabitService service = new HabitService(db.HabitRepository);
-                return service.Update(userID, habitID, name, daysOff);
-            }
+            return _habitService.Update(userID, habitID, name, daysOff);
         }
 
         public HabitEntity.Habit DeleteHabit(Guid userID, Guid habitID)
         {
-            using(var db = new PostgresUnitOfWork())
-            {
-                return db.HabitRepository.DeleteHabit(userID, habitID);
-            }
+            return _habitService.Delete(userID, habitID);
         }
         public HabitEntity.Habit InsertLog(Guid userID, Guid habitID)
         {
-            using(var db = new PostgresUnitOfWork())
-            {
-                IStreakCalculationService service = new StreakCalculationService(db.HabitRepository, db.UserRepository);
-                return service.InsertHabitLog(userID, habitID, DateTime.Parse("2020-07-19 16:49:28.223996+07"));
-            }
+            return _streakService.InsertHabitLog(userID, habitID, DateTime.Parse("2020-07-19 16:49:28.223996+07"));
         }
     }
 }

@@ -99,7 +99,6 @@ namespace HabitTracker.Infrastructure.Repository
 
         public void InsertBadge(Guid badgeID, Guid userID)
         {
-            Console.WriteLine("Test");
             String rawQuery = @"INSERT INTO badge_user VALUES (@badgeId, @userId)";
             using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
             {

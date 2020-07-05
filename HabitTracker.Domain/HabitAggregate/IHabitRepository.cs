@@ -15,7 +15,7 @@ namespace HabitTracker.Domain.HabitAggregate {
         void InsertHabitLogSnapshot(Guid userID, Guid habitID, Int16 streak, DateTime currentDate);
         Int16 GetTotalLogOnHolidays(Guid userID);
         DateTime GetFirstFromTenStreakDay(Guid userID, Guid habitID);
-        DateTime GetLastDayBeforeTenStreak(Guid userID, Guid habitID, DateTime firstStreakDay);
+        String GetLastDayBeforeTenStreak(Guid userID, Guid habitID, DateTime firstStreakDay);
     }
     
 }

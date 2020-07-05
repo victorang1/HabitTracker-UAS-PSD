@@ -5,27 +5,35 @@ namespace HabitTracker.Domain.HabitAggregate
 {
     public class DaysOff
     {
-        public String[] daysOff { get; private set; }
+        public String[] Holidays { get; private set; }
 
         public DaysOff(String[] daysOff)
         {
-            if(!IsValid(daysOff)) throw new Exception("Invalid Days Input");
-            this.daysOff = daysOff;
+            if(!isValid(daysOff)) throw new Exception("Invalid Days Input");
+            this.Holidays = daysOff;
         }
         
-        private bool IsValid(String[] daysOff)
+        private bool isValid(String[] daysOff)
         {
+            if(!daysOff.Any()) return true;
             if(daysOff.Length >= 7) return false;
+            if(isDuplicateExists(daysOff)) return false;
             string[] days = new string[] {
                 "Mon", "Tue", "Wed", "Thu",
                 "Fri", "Sat", "Sun"
             };
 
-            foreach(string str in daysOff)
+            foreach(String str in daysOff)
             {
                 if(!days.Any(value => value.Contains(str))) return false;
             }
             return true;
+        }
+
+        private Boolean isDuplicateExists(String[] daysOff)
+        {
+            return daysOff.GroupBy(x => x)
+                .Any(c => c.Count() > 1);
         }
     }
 }

@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using HabitTracker.Infrastructure.Repository;
 using HabitEntity = HabitTracker.Domain.HabitAggregate;
-
 using HabitTracker.Api;
 
 namespace HabitTracker.API.AntiCorruption
@@ -11,9 +11,9 @@ namespace HabitTracker.API.AntiCorruption
     public class HabitACL
     {
         private IAppHabitService _appHabitService;
-        public HabitACL(IAppHabitService appHabitServicee)
+        public HabitACL(IAppHabitService appHabitService)
         {
-            _appHabitService = appHabitServicee;
+            this._appHabitService = appHabitService;
         }
         public List<Habit> GetAllUserHabits(Guid userID)
         {

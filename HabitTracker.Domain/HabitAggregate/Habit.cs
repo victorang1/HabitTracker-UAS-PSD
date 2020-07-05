@@ -8,20 +8,50 @@ namespace HabitTracker.Domain.HabitAggregate
         public Guid HabitID { get; private set; }
         public Name Name { get; private set; }
         public DaysOff DaysOff { get; private set; }
-        public Int16 CurrentStreak { get; private set; }
-        public Int16 LongestStreak { get; private set; }
+        public Streak Streak { get; private set; }
         public Int16 LogCount { get; private set; }
         public IEnumerable<DateTime> Logs { get; private set; }
         public Guid UserID { get; private set; }
         public DateTime CreatedAt { get; set; }
 
-        public Habit(Guid habitID, Name habitName, DaysOff daysOff, Int16 currentStreak, Int16 longestStreak, Int16 logCount, IEnumerable<DateTime> logs, Guid userID, DateTime createdAt)
+        public Int16 CurrentStreak
+        {
+            get 
+            {
+                return Streak.CurrentStreak;
+            }
+        }
+
+        public Int16 LongestStreak
+        {
+            get
+            {
+                return Streak.LongestStreak;
+            }
+        }
+
+        public String HabitName
+        {
+            get
+            {
+                return Name.HabitName;
+            }
+        }
+
+        public String[] Holidays
+        {
+            get
+            {
+                return DaysOff.Holidays;
+            }
+        }
+
+        public Habit(Guid habitID, Name habitName, DaysOff daysOff, Streak streak, Int16 logCount, IEnumerable<DateTime> logs, Guid userID, DateTime createdAt)
         {
             this.HabitID = habitID;
             this.Name = habitName;
             this.DaysOff = daysOff;
-            this.CurrentStreak = currentStreak;
-            this.LongestStreak = longestStreak;
+            this.Streak = streak;
             this.LogCount = logCount;
             this.Logs = logs;
             this.UserID = userID;

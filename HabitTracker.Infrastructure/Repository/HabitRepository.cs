@@ -50,7 +50,9 @@ namespace HabitTracker.Infrastructure.Repository
             using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
             {
                 cmd.Parameters.AddWithValue("userId", userID);
-                cmd.Parameters.AddWithValue("currDate", "2020-07-07T16:49:28.223996+07:00");
+                cmd.Parameters.AddWithValue("currDate", DateTime.Now.Date);
+                // For manual testing
+                // cmd.Parameters.AddWithValue("currDate", "2020-07-11T16:49:28.223996+07:00");
                 using (NpgsqlDataReader reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -60,14 +62,14 @@ namespace HabitTracker.Infrastructure.Repository
                         {
                             currentStreak = reader.GetInt16(3);
                         }
-                        Habit habit = new Habit(
+                        Habit habit = HabitFactory.CreateHabit(
                             reader.GetGuid(0),
-                            new Name(reader.GetString(1)),
-                            new DaysOff((String[]) reader.GetValue(2)),
+                            reader.GetString(1),
+                            (String[]) reader.GetValue(2),
                             currentStreak,
                             reader.GetInt16(4),
                             reader.GetInt16(5),
-                            getLogs(reader.GetString(6)),
+                            reader.GetString(6),
                             reader.GetGuid(7),
                             (DateTime) reader.GetValue(8)
                         );
@@ -108,7 +110,9 @@ namespace HabitTracker.Infrastructure.Repository
             {
                 cmd.Parameters.AddWithValue("userId", userID);
                 cmd.Parameters.AddWithValue("habitId", habitID);
-                cmd.Parameters.AddWithValue("currDate", "2020-07-30 16:49:28.223996+07");
+                cmd.Parameters.AddWithValue("currDate", DateTime.Now.Date);
+                // For manual testing
+                // cmd.Parameters.AddWithValue("currDate", "2020-07-11T16:49:28.223996+07:00");
                 using (NpgsqlDataReader reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -118,14 +122,14 @@ namespace HabitTracker.Infrastructure.Repository
                         {
                             currentStreak = reader.GetInt16(3);
                         }
-                        habit = new Habit(
+                        habit = HabitFactory.CreateHabit(
                             reader.GetGuid(0),
-                            new Name(reader.GetString(1)),
-                            new DaysOff((String[]) reader.GetValue(2)),
+                            reader.GetString(1),
+                            (String[]) reader.GetValue(2),
                             currentStreak,
                             reader.GetInt16(4),
                             reader.GetInt16(5),
-                            getLogs(reader.GetString(6)),
+                            reader.GetString(6),
                             reader.GetGuid(7),
                             (DateTime) reader.GetValue(8)
                         );
@@ -140,8 +144,6 @@ namespace HabitTracker.Infrastructure.Repository
             using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
             {
                 try {
-                    // String[] arrDaysOff = daysOff != null 
-                    //     ? arrDaysOff = daysOff.Select(i => i).ToArray() : new String[]{};
                     Guid habitID = Guid.NewGuid();
                     cmd.Parameters.AddWithValue("habitId", habitID);
                     cmd.Parameters.AddWithValue("habitName", habitName);
@@ -165,8 +167,6 @@ namespace HabitTracker.Infrastructure.Repository
             using (var cmd = new NpgsqlCommand(rawQuery, _connection, _transaction))
             {
                 try {
-                    // String[] arrDaysOff = daysOff != null 
-                    //     ? arrDaysOff = daysOff.Select(i => i).ToArray() : new String[]{};
                     cmd.Parameters.AddWithValue("habitId", habitID);
                     cmd.Parameters.AddWithValue("habitName", habitName);
                     cmd.Parameters.AddWithValue("daysOff", daysOff);
@@ -364,7 +364,6 @@ namespace HabitTracker.Infrastructure.Repository
                 {
                     if (reader.Read())
                     {
-                        Console.WriteLine("Test");
                         firstStreakDay = (DateTime) reader.GetValue(0);
                     }
                 }
@@ -372,9 +371,9 @@ namespace HabitTracker.Infrastructure.Repository
             return firstStreakDay;
         }
 
-        public DateTime GetLastDayBeforeTenStreak(Guid userID, Guid habitID, DateTime firstStreakDay)
+        public String GetLastDayBeforeTenStreak(Guid userID, Guid habitID, DateTime firstStreakDay)
         {
-            DateTime lastDayBeforeStreak = new DateTime();
+            String lastDayBeforeStreak = String.Empty;
             String firstQuery = @"SELECT logs_created FROM habit_logs
                 WHERE logs_created::date < @currDate::date
                 AND habit_id = @habitId
@@ -389,7 +388,7 @@ namespace HabitTracker.Infrastructure.Repository
                 {
                     if (reader.Read())
                     {
-                        lastDayBeforeStreak = (DateTime) reader.GetValue(0);
+                        lastDayBeforeStreak = ((DateTime) reader.GetValue(0)).ToString();
                     }
                 }
             }

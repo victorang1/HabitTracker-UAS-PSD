@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 
 using HabitTracker.API.AntiCorruption;
 using HabitTracker.API.Services;
+using HabitTracker.Domain.Service;
+using HabitTracker.Infrastructure.Repository;
 
 namespace HabitTracker.Api.Controllers
 {
@@ -19,7 +21,10 @@ namespace HabitTracker.Api.Controllers
     public HabitsController(ILogger<HabitsController> logger)
     {
       _logger = logger;
-      dataSource = new HabitACL(new AppHabitService());
+      PostgresUnitOfWork db = new PostgresUnitOfWork();
+      dataSource = new HabitACL(new AppHabitService(
+                  new HabitService(db.HabitRepository), 
+                  new StreakCalculationService(db.HabitRepository, db.UserRepository)));
     }
 
     [HttpGet("api/v1/users/{userID}/habits")]
@@ -83,23 +88,37 @@ namespace HabitTracker.Api.Controllers
     [HttpDelete("api/v1/users/{userID}/habits/{id}")]
     public ActionResult<Habit> DeleteHabit(Guid userID, Guid id)
     {
-      Habit habit = dataSource.DeleteHabit(userID, id);
-      if(habit != null)
+      try
       {
-        return habit;
+        Habit habit = dataSource.DeleteHabit(userID, id);
+        if(habit != null)
+        {
+          return habit;
+        }
+        return NotFound("Fail to delete");
       }
-      return NotFound("habit id not found");
+      catch(Exception e)
+      {
+        return NotFound(e.Message);
+      }
     }
 
     [HttpPost("api/v1/users/{userID}/habits/{id}/logs")]
     public ActionResult<Habit> Log(Guid userID, Guid id)
     {
-      Habit habit = dataSource.InsertLog(userID, id);
-      if(habit != null)
+      try
       {
-        return habit;
+        Habit habit = dataSource.InsertLog(userID, id);
+        if(habit != null)
+        {
+          return habit;
+        }
+        return NotFound("Failed to insert log to this habit");
       }
-      return NotFound("Failed to insert log to this habit");
+      catch(Exception e)
+      {
+        return NotFound(e.Message);
+      }
     }
   }
 }

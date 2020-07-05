@@ -26,24 +26,29 @@ namespace HabitTracker.Domain.Service
 
         public Habit InsertHabitLog(Guid userID, Guid habitID, DateTime currentDate)
         {
-            Attach(new LogCreatedHandler(_habitService, _badgeService));
-            try 
+            Habit thisHabit = _habitRepository.GetHabit(userID, habitID);
+            if(thisHabit != null)
             {
-                Habit habit = InsertLogForThisHabit(userID, habitID, currentDate);
-                Broadcast(new LogCreated(userID, habitID));
-                return habit;
+                Attach(new LogCreatedHandler(_habitService, _badgeService));
+                try 
+                {
+                    Habit habit = InsertLogForThisHabit(userID, habitID, currentDate);
+                    Broadcast(new LogCreated(userID, habitID));
+                    return habit;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    return null;
+                }
             }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                return null;
-            }
+            throw new Exception("This user with habit id " + habitID + " not found");
         }
 
         public Habit InsertLogForThisHabit(Guid userID, Guid habitID, DateTime currentDate)
         {
             Habit habitData = _habitRepository.GetHabit(userID, habitID);
-            String[] daysOff = habitData.DaysOff.daysOff;
+            String[] daysOff = habitData.Holidays;
             String strLastLog = getLastLogs(habitData.Logs);
             if(strLastLog != null && !strLastLog.Equals(""))
             {

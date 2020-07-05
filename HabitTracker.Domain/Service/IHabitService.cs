@@ -7,6 +7,7 @@ namespace HabitTracker.Domain.Service
     {
         Habit Create(Guid userID, String habitName, String[] daysOff);
         Habit Update(Guid userID, Guid habitID, String name, String[] daysOff);
+        Habit Delete(Guid userID, Guid habitID);
         Boolean CheckDominating(Guid userID, Guid habitID);
         Boolean CheckWorkaholic(Guid userID);
         Boolean CheckEpicComeback(Guid userID, Guid habitID);
